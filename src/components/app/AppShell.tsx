@@ -5,6 +5,8 @@ import { data, formatMonth } from "@/lib/dashboard-data";
 import { useAssistant } from "@/components/assistant/AssistantProvider";
 import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { ThemeToggle } from "@/components/app/ThemeToggle";
+import { CurrencySwitcher } from "@/components/app/CurrencySwitcher";
+import { useMoney } from "@/components/app/CurrencyProvider";
 
 type Props = {
   children: ReactNode;
@@ -14,6 +16,7 @@ type Props = {
 
 export function AppShell({ children, pageEyebrow }: Props) {
   const assistant = useAssistant();
+  const money = useMoney();
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
@@ -51,7 +54,7 @@ export function AppShell({ children, pageEyebrow }: Props) {
                 <span>Cierre {formatMonth(data.latestMonth)}</span>
               </div>
               <span className="hidden text-border md:inline">·</span>
-              <span className="hidden md:inline">EUR · es-ES</span>
+              <CurrencySwitcher />
               <ThemeToggle compact className="ml-1" />
             </div>
           </header>
