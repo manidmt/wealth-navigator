@@ -102,6 +102,7 @@ function HomePage() {
           <SectionCard
             title="Evolución del patrimonio"
             description="Serie mensual de patrimonio neto consolidado."
+            askPrompt="Analiza la evolución del patrimonio neto: tendencia, mejores y peores meses, y ritmo de crecimiento."
             actions={
               <Link
                 to="/net-worth"
@@ -117,6 +118,7 @@ function HomePage() {
           <SectionCard
             title="Distribución del patrimonio"
             description="Composición por tipo de activo sobre el total."
+            askPrompt="¿Está bien diversificada mi distribución por tipo de activo? Señala concentraciones."
           >
             <DonutChart data={data.allocation} total={allocationTotal} />
           </SectionCard>
