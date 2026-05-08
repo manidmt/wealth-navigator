@@ -1,6 +1,7 @@
 import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatPercent } from "@/lib/dashboard-data";
+import { useMoney } from "@/components/app/CurrencyProvider";
 
 type Props = {
   value: number;
@@ -13,6 +14,7 @@ type Props = {
 };
 
 export function DeltaBadge({ value, asPercent, invert, className, prefix }: Props) {
+  const money = useMoney();
   const sign = value === 0 ? 0 : value > 0 ? 1 : -1;
   const tone =
     sign === 0
@@ -31,10 +33,10 @@ export function DeltaBadge({ value, asPercent, invert, className, prefix }: Prop
     ? formatPercent(value)
     : new Intl.NumberFormat("es-ES", {
         style: "currency",
-        currency: "EUR",
+        currency: money.code,
         maximumFractionDigits: 0,
         signDisplay: "exceptZero",
-      }).format(value);
+      }).format(money.convert(value));
 
   return (
     <span
