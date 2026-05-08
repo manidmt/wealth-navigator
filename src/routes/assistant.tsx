@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { ArrowUp, Plus, Square } from "lucide-react";
 import { z } from "zod";
 import { AppShell } from "@/components/app/AppShell";
