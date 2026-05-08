@@ -78,7 +78,7 @@ export function NetWorthAreaChart({ series }: { series: SeriesPoint[] }) {
           <Tooltip
             cursor={{ stroke: "var(--border-strong)", strokeWidth: 1 }}
             contentStyle={tooltipStyle}
-            formatter={(v: number) => euro1.format(v)}
+            formatter={(v: any) => euro1.format(Number(v))}
           />
           <Area
             type="monotone"
@@ -124,7 +124,7 @@ export function DonutChart({
           </Pie>
           <Tooltip
             contentStyle={tooltipStyle}
-            formatter={(v: number, n) => [euro1.format(v), n as string]}
+            formatter={(v: any, n: any) => [euro1.format(Number(v)), String(n)]}
           />
           <Legend
             verticalAlign="bottom"
@@ -166,7 +166,7 @@ export function MonthlyExpensesBars({
           <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="month" tickLine={false} axisLine={false} {...axisStyle} />
           <YAxis tickFormatter={shortEuro} tickLine={false} axisLine={false} width={48} {...axisStyle} />
-          <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => euro1.format(v)} />
+          <Tooltip contentStyle={tooltipStyle} formatter={(v: any) => euro1.format(Number(v))} />
           <Bar dataKey="Ingresos" fill="var(--chart-2)" radius={[4, 4, 0, 0]} maxBarSize={26} />
           <Bar dataKey="Gastos" fill="var(--chart-4)" radius={[4, 4, 0, 0]} maxBarSize={26} />
           <Line type="monotone" dataKey="Neto" stroke="var(--chart-1)" strokeWidth={2} dot={false} />
