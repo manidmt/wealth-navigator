@@ -12,6 +12,7 @@ type Props = {
 };
 
 export function AppShell({ children, pageEyebrow }: Props) {
+  const assistant = useAssistant();
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
