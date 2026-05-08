@@ -67,15 +67,15 @@ function PortfolioPage() {
         </section>
 
         <section className="grid gap-5 lg:grid-cols-2">
-          <SectionCard title="Por categoría" description="Peso de cada tipo de activo.">
+          <SectionCard title="Por categoría" description="Peso de cada tipo de activo." askPrompt="¿Cómo está repartido mi portfolio por tipo de activo y dónde hay sobreexposición?">
             <DonutChart data={byCategory} total={total} />
           </SectionCard>
-          <SectionCard title="Por plataforma" description="Distribución entre brokers y custodios.">
+          <SectionCard title="Por plataforma" description="Distribución entre brokers y custodios." askPrompt="¿En qué plataformas tengo más concentración y cuál es el riesgo asociado?">
             <BarList items={byPlatform.length ? byPlatform : []} total={total} />
           </SectionCard>
         </section>
 
-        <SectionCard title="Posiciones" description="Detalle ordenado por valor de mercado.">
+        <SectionCard title="Posiciones" description="Detalle ordenado por valor de mercado." askPrompt="Revisa mis posiciones: cuáles destacan, cuáles deberían reducirse y propuestas de rebalance.">
           <div className="overflow-hidden rounded-lg border border-border">
             <table className="w-full text-[13px]">
               <thead className="bg-muted/40">
