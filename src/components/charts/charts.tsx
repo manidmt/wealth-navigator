@@ -1,0 +1,238 @@
+"use client";
+
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { euro1, monthShort, type SeriesPoint } from "@/lib/dashboard-data";
+
+const CHART_COLORS = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+];
+
+const tooltipStyle = {
+  backgroundColor: "var(--card)",
+  border: "1px solid var(--border-strong)",
+  borderRadius: 10,
+  padding: "8px 12px",
+  fontSize: 12,
+  color: "var(--foreground)",
+  boxShadow: "0 8px 24px -16px oklch(0.2 0.04 250 / 0.25)",
+};
+
+const axisStyle = {
+  stroke: "var(--muted-foreground)",
+  fontSize: 11,
+  fontFamily: "var(--font-mono)",
+};
+
+function shortEuro(n: number) {
+  if (Math.abs(n) >= 1000) return `${(n / 1000).toFixed(0)}k`;
+  return String(Math.round(n));
+}
+
+/* ----------------------------- Net worth area ---------------------------- */
+
+export function NetWorthAreaChart({ series }: { series: SeriesPoint[] }) {
+  const rows = series.map((p) => ({
+    month: monthShort(p.month) + " " + p.month.slice(2, 4),
+    netWorth: p.netWorth,
+    assets: p.assets,
+  }));
+  return (
+    <div className="h-[280px] w-full">
+      <ResponsiveContainer>
+        <AreaChart data={rows} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id="nwFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.35} />
+              <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+          <XAxis dataKey="month" tickLine={false} axisLine={false} {...axisStyle} />
+          <YAxis
+            tickFormatter={shortEuro}
+            tickLine={false}
+            axisLine={false}
+            width={48}
+            {...axisStyle}
+          />
+          <Tooltip
+            cursor={{ stroke: "var(--border-strong)", strokeWidth: 1 }}
+            contentStyle={tooltipStyle}
+            formatter={(v: number) => euro1.format(v)}
+          />
+          <Area
+            type="monotone"
+            dataKey="netWorth"
+            stroke="var(--chart-1)"
+            strokeWidth={2}
+            fill="url(#nwFill)"
+            name="Patrimonio"
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+/* ----------------------------- Donut ------------------------------------- */
+
+export function DonutChart({
+  data,
+  total,
+}: {
+  data: { label: string; value: number }[];
+  total?: number;
+}) {
+  const sum = total ?? data.reduce((acc, d) => acc + d.value, 0);
+  return (
+    <div className="relative h-[240px] w-full">
+      <ResponsiveContainer>
+        <PieChart>
+          <Pie
+            data={data}
+            dataKey="value"
+            nameKey="label"
+            innerRadius={70}
+            outerRadius={100}
+            paddingAngle={2}
+            stroke="var(--card)"
+            strokeWidth={2}
+          >
+            {data.map((_, i) => (
+              <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+            ))}
+          </Pie>
+          <Tooltip
+            contentStyle={tooltipStyle}
+            formatter={(v: number, n) => [euro1.format(v), n as string]}
+          />
+          <Legend
+            verticalAlign="bottom"
+            iconType="circle"
+            iconSize={8}
+            wrapperStyle={{ fontSize: 11.5, color: "var(--muted-foreground)" }}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center pb-12">
+        <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+          Total
+        </div>
+        <div className="font-display text-xl font-semibold tabular-nums">
+          {euro1.format(sum)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ----------------------------- Bars by month ----------------------------- */
+
+export function MonthlyExpensesBars({
+  rows,
+}: {
+  rows: { month: string; expenseTotal: number; incomeTotal: number; net: number }[];
+}) {
+  const data = rows.map((r) => ({
+    month: monthShort(r.month),
+    Gastos: r.expenseTotal,
+    Ingresos: r.incomeTotal,
+    Neto: r.net,
+  }));
+  return (
+    <div className="h-[260px] w-full">
+      <ResponsiveContainer>
+        <BarChart data={data} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
+          <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+          <XAxis dataKey="month" tickLine={false} axisLine={false} {...axisStyle} />
+          <YAxis tickFormatter={shortEuro} tickLine={false} axisLine={false} width={48} {...axisStyle} />
+          <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => euro1.format(v)} />
+          <Bar dataKey="Ingresos" fill="var(--chart-2)" radius={[4, 4, 0, 0]} maxBarSize={26} />
+          <Bar dataKey="Gastos" fill="var(--chart-4)" radius={[4, 4, 0, 0]} maxBarSize={26} />
+          <Line type="monotone" dataKey="Neto" stroke="var(--chart-1)" strokeWidth={2} dot={false} />
+          <Legend wrapperStyle={{ fontSize: 11.5, paddingTop: 8 }} iconType="circle" iconSize={8} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+/* ----------------------------- Horizontal bar list ------------------------ */
+
+export function BarList({
+  items,
+  total,
+}: {
+  items: { label: string; value: number }[];
+  total?: number;
+}) {
+  const sum = total ?? items.reduce((a, b) => a + b.value, 0);
+  return (
+    <ul className="space-y-3">
+      {items.map((it, i) => {
+        const pct = sum > 0 ? (it.value / sum) * 100 : 0;
+        return (
+          <li key={it.label}>
+            <div className="mb-1 flex items-baseline justify-between gap-2 text-[12.5px]">
+              <span className="truncate text-foreground">{it.label}</span>
+              <span className="shrink-0 text-muted-foreground tabular-nums">
+                {euro1.format(it.value)}{" "}
+                <span className="text-muted-foreground/70">· {pct.toFixed(1)}%</span>
+              </span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${pct}%`,
+                  background: CHART_COLORS[i % CHART_COLORS.length],
+                }}
+              />
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/* ----------------------------- Sparkline --------------------------------- */
+
+export function Sparkline({ values, color }: { values: number[]; color?: string }) {
+  const data = values.map((v, i) => ({ i, v }));
+  return (
+    <div className="h-10 w-full">
+      <ResponsiveContainer>
+        <LineChart data={data}>
+          <Line
+            type="monotone"
+            dataKey="v"
+            stroke={color ?? "var(--chart-1)"}
+            strokeWidth={1.75}
+            dot={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
