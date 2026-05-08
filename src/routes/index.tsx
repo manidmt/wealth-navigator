@@ -1,22 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
+import { useState } from "react";
 import { AppShell } from "@/components/app/AppShell";
 import { PageHeader, SectionCard, SectionLabel } from "@/components/app/SectionCard";
 import { KpiCard } from "@/components/app/KpiCard";
 import { DeltaBadge } from "@/components/app/DeltaBadge";
 import { RangeProvider, RangeToolbar, useRange } from "@/components/app/RangeToolbar";
+import { MonthDetailDrawer } from "@/components/app/MonthDetailDrawer";
 import {
   BarList,
   DonutChart,
   NetWorthAreaChart,
 } from "@/components/charts/charts";
 import { InsightsCard } from "@/components/assistant/InsightsCard";
-import {
-  data,
-  euro,
-  euro1,
-  formatMonth,
-} from "@/lib/dashboard-data";
+import { useMoney } from "@/components/app/CurrencyProvider";
+import { data, formatMonth } from "@/lib/dashboard-data";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -38,7 +36,7 @@ function HomePage() {
       <PageHeader
         eyebrow={`Cierre ${formatMonth(data.latestMonth)}`}
         title="Resumen"
-        description={`Vista ejecutiva del patrimonio de ${data.owner}. Cifras consolidadas en EUR sobre el último cierre disponible.`}
+        description={`Vista ejecutiva del patrimonio de ${data.owner}. Cifras consolidadas sobre el último cierre disponible.`}
         actions={
           <Link
             to="/net-worth"
@@ -51,7 +49,7 @@ function HomePage() {
 
       <RangeProvider defaultRange="12M">
         <div className="px-4 md:px-8">
-          <RangeToolbar label={`Cierre ${formatMonth(data.latestMonth)} · EUR`} />
+          <RangeToolbar label={`Cierre ${formatMonth(data.latestMonth)}`} />
         </div>
         <HomeBody />
       </RangeProvider>
@@ -60,24 +58,34 @@ function HomePage() {
 }
 
 function HomeBody() {
-  const { slice } = useRange();
+  const { slice, baseline, compare } = useRange();
+  const money = useMoney();
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
 
   const series = slice(data.series);
   const expenseMonths = slice(data.expenses.byMonth);
   const lastMonths = expenseMonths.slice(-6);
 
-  // KPI computations driven by the active range
+  // KPI computations driven by the active range + compare mode
   const last = series[series.length - 1] ?? data.series[data.series.length - 1];
   const first = series[0] ?? data.series[0];
-  const rangeChange = last.netWorth - first.netWorth;
-  const rangeChangePct = first.netWorth > 0 ? rangeChange / first.netWorth : 0;
+  const baseSeries = baseline(data.series) ?? first;
+  const change = last.netWorth - baseSeries.netWorth;
+  const changePct = baseSeries.netWorth > 0 ? change / baseSeries.netWorth : 0;
+
+  const baseExp = baseline(data.expenses.byMonth);
+  const lastExp = expenseMonths[expenseMonths.length - 1];
+  const expDelta =
+    lastExp && baseExp ? lastExp.expenseTotal - baseExp.expenseTotal : 0;
+
+  const compareLabel =
+    compare === "prev"
+      ? `vs ${formatMonth(baseSeries.month)}`
+      : compare === "first"
+        ? `vs inicio ${formatMonth(baseSeries.month)}`
+        : `vs YTD ${formatMonth(baseSeries.month)}`;
 
   const totalSavings = expenseMonths.reduce((acc, m) => acc + m.net, 0);
-  const monthlyChange = data.summary.monthlyChange;
-  const monthlyChangePct =
-    data.summary.netWorth - monthlyChange > 0
-      ? monthlyChange / (data.summary.netWorth - monthlyChange)
-      : 0;
 
   const topCats = data.expenses.currentMonthCategories.slice(0, 5);
   const topHoldings = [...data.portfolio.holdings]
@@ -96,36 +104,38 @@ function HomeBody() {
   return (
     <div className="space-y-10 px-4 py-8 md:px-8">
       <section>
-        <SectionLabel>Patrimonio en el rango</SectionLabel>
+        <SectionLabel>Patrimonio · {compareLabel}</SectionLabel>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <KpiCard
             accent="primary"
             label="Patrimonio neto"
-            value={euro.format(last.netWorth)}
-            hint={`Activos ${euro.format(last.assets)} · Pasivos ${euro.format(last.liabilities)}`}
-            badge={<DeltaBadge value={monthlyChangePct} asPercent />}
+            value={money.format(last.netWorth)}
+            hint={`Activos ${money.format(last.assets)} · Pasivos ${money.format(last.liabilities)}`}
+            badge={<DeltaBadge value={changePct} asPercent />}
             series={netWorthTrend}
           />
           <KpiCard
-            label="Variación en el rango"
-            value={euro1.format(rangeChange)}
-            hint={`${formatMonth(first.month)} → ${formatMonth(last.month)}`}
-            badge={<DeltaBadge value={rangeChangePct} asPercent />}
+            label="Variación"
+            value={money.format1(change)}
+            hint={compareLabel}
+            badge={<DeltaBadge value={changePct} asPercent />}
             series={monthlyDeltas}
-            sparkColor={rangeChange >= 0 ? "var(--positive)" : "var(--negative)"}
+            sparkColor={change >= 0 ? "var(--positive)" : "var(--negative)"}
           />
           <KpiCard
             label="Ahorro acumulado"
-            value={euro1.format(totalSavings)}
+            value={money.format1(totalSavings)}
             hint={`${expenseMonths.length} cierres en el rango`}
             series={savingsTrend}
             sparkColor="var(--chart-2)"
           />
           <KpiCard
-            label="Activos totales"
-            value={euro.format(last.assets)}
-            hint={`${data.holdings.length} posiciones agregadas`}
-            series={assetsTrend}
+            label="Gasto del mes"
+            value={lastExp ? money.format1(lastExp.expenseTotal) : "—"}
+            hint={baseExp ? `vs ${money.format1(baseExp.expenseTotal)} (${compareLabel})` : ""}
+            badge={baseExp ? <DeltaBadge value={expDelta} invert /> : null}
+            series={expenseMonths.map((m) => m.expenseTotal)}
+            sparkColor="var(--chart-4)"
           />
         </div>
       </section>
@@ -135,7 +145,7 @@ function HomeBody() {
       <section className="grid gap-5 lg:grid-cols-[1.55fr_1fr]">
         <SectionCard
           title="Evolución del patrimonio"
-          description={`Serie mensual desde ${formatMonth(first.month)}.`}
+          description={`Serie mensual desde ${formatMonth(first.month)}. Pulsa un mes para ver el detalle.`}
           askPrompt="Analiza la evolución del patrimonio neto: tendencia, mejores y peores meses, y ritmo de crecimiento."
           actions={
             <Link
@@ -146,7 +156,7 @@ function HomeBody() {
             </Link>
           }
         >
-          <NetWorthAreaChart series={series} />
+          <NetWorthAreaChart series={series} onSelectMonth={setSelectedMonth} />
         </SectionCard>
 
         <SectionCard
@@ -161,7 +171,7 @@ function HomeBody() {
       <section className="grid gap-5 lg:grid-cols-[1fr_1fr]">
         <SectionCard
           title={`Gasto del mes — ${formatMonth(data.expenses.currentMonth)}`}
-          description={`Total ${euro1.format(data.expenses.currentMonthTotal)} · Ingresos ${euro1.format(data.expenses.currentMonthIncome)}`}
+          description={`Total ${money.format1(data.expenses.currentMonthTotal)} · Ingresos ${money.format1(data.expenses.currentMonthIncome)}`}
           askPrompt={`Explícame el gasto de ${formatMonth(data.expenses.currentMonth)}: top categorías, anomalías y comparativa con el mes anterior.`}
           actions={
             <Link
@@ -203,7 +213,7 @@ function HomeBody() {
                   </div>
                 </div>
                 <div className="text-[13px] font-medium tabular-nums">
-                  {euro1.format(h.value)}
+                  {money.format1(h.value)}
                 </div>
               </li>
             ))}
@@ -215,23 +225,31 @@ function HomeBody() {
         <SectionLabel>Últimos cierres en el rango</SectionLabel>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
           {lastMonths.map((m) => (
-            <div
+            <button
               key={m.month}
-              className="rounded-lg border border-border bg-card p-3.5"
+              type="button"
+              onClick={() => setSelectedMonth(m.month)}
+              className="rounded-lg border border-border bg-card p-3.5 text-left transition hover:border-border-strong"
             >
               <div className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
                 {formatMonth(m.month)}
               </div>
               <div className="mt-1 font-display text-base font-semibold tabular-nums">
-                {euro1.format(m.net)}
+                {money.format1(m.net)}
               </div>
               <div className="mt-0.5 text-[11.5px] text-muted-foreground">
-                Gasto {euro1.format(m.expenseTotal)}
+                Gasto {money.format1(m.expenseTotal)}
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </section>
+
+      <MonthDetailDrawer
+        month={selectedMonth}
+        open={!!selectedMonth}
+        onOpenChange={(o) => (o ? null : setSelectedMonth(null))}
+      />
     </div>
   );
 }
