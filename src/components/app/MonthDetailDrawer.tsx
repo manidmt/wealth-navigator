@@ -125,6 +125,19 @@ export function MonthDetailDrawer({ month, open, onOpenChange }: Props) {
                 No hay desglose de gastos registrado para este mes.
               </div>
             )}
+
+            {exp ? (
+              <div>
+                <div className="mb-2 text-[10.5px] uppercase tracking-[0.16em] text-muted-foreground">
+                  Etiquetas del mes
+                </div>
+                <ExpenseTagsBreakdown
+                  month={month}
+                  rangeMonths={data.expenses.byMonth}
+                  compact
+                />
+              </div>
+            ) : null}
           </div>
         ) : (
           <div className="mt-6 px-4 text-[12.5px] text-muted-foreground">
