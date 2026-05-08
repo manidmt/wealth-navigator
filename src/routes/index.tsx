@@ -46,6 +46,15 @@ function HomePage() {
 
   const allocationTotal = data.allocation.reduce((a, b) => a + b.value, 0);
 
+  // Trend series for the KPI sparklines (last 12 cierres).
+  const trail = data.series.slice(-12);
+  const netWorthTrend = trail.map((p) => p.netWorth);
+  const assetsTrend = trail.map((p) => p.assets);
+  const monthlyDeltas = trail
+    .map((p, i, arr) => (i === 0 ? 0 : p.netWorth - arr[i - 1].netWorth))
+    .slice(1);
+  const savingsTrend = data.expenses.byMonth.slice(-12).map((m) => m.net);
+
   return (
     <AppShell pageEyebrow="Resumen ejecutivo">
       <PageHeader
@@ -72,25 +81,33 @@ function HomePage() {
               label="Patrimonio neto"
               value={euro.format(data.summary.netWorth)}
               hint={`Activos ${euro.format(data.summary.totalAssets)} · Pasivos ${euro.format(data.summary.totalLiabilities)}`}
-              badge={
-                <DeltaBadge value={monthlyChangePct} asPercent />
-              }
+              badge={<DeltaBadge value={monthlyChangePct} asPercent />}
+              series={netWorthTrend}
             />
             <KpiCard
               label="Variación mensual"
               value={euro1.format(data.summary.monthlyChange)}
               hint={`Frente al cierre anterior · ${formatMonth(data.latestMonth)}`}
               badge={<DeltaBadge value={data.summary.monthlyChange} />}
+              series={monthlyDeltas}
+              sparkColor={
+                data.summary.monthlyChange >= 0
+                  ? "var(--positive)"
+                  : "var(--negative)"
+              }
             />
             <KpiCard
               label="Ahorro del mes"
               value={euro1.format(data.summary.latestSavings)}
               hint="Ingresos menos gastos en el cierre"
+              series={savingsTrend}
+              sparkColor="var(--chart-2)"
             />
             <KpiCard
               label="Activos totales"
               value={euro.format(data.summary.totalAssets)}
               hint={`${data.holdings.length} posiciones agregadas`}
+              series={assetsTrend}
             />
           </div>
         </section>
