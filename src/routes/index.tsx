@@ -102,6 +102,7 @@ function HomePage() {
           <SectionCard
             title="Evolución del patrimonio"
             description="Serie mensual de patrimonio neto consolidado."
+            askPrompt="Analiza la evolución del patrimonio neto: tendencia, mejores y peores meses, y ritmo de crecimiento."
             actions={
               <Link
                 to="/net-worth"
@@ -117,6 +118,7 @@ function HomePage() {
           <SectionCard
             title="Distribución del patrimonio"
             description="Composición por tipo de activo sobre el total."
+            askPrompt="¿Está bien diversificada mi distribución por tipo de activo? Señala concentraciones."
           >
             <DonutChart data={data.allocation} total={allocationTotal} />
           </SectionCard>
@@ -127,6 +129,7 @@ function HomePage() {
           <SectionCard
             title={`Gasto del mes — ${formatMonth(data.expenses.currentMonth)}`}
             description={`Total ${euro1.format(data.expenses.currentMonthTotal)} · Ingresos ${euro1.format(data.expenses.currentMonthIncome)}`}
+            askPrompt={`Explícame el gasto de ${formatMonth(data.expenses.currentMonth)}: top categorías, anomalías y comparativa con el mes anterior.`}
             actions={
               <Link
                 to="/expenses"
@@ -142,6 +145,7 @@ function HomePage() {
           <SectionCard
             title="Posiciones principales"
             description="Top posiciones por valor de mercado."
+            askPrompt="Comenta mis posiciones principales: peso relativo, riesgo de concentración y posibles ajustes."
             actions={
               <Link
                 to="/portfolio"

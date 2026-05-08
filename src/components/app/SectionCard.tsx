@@ -1,5 +1,7 @@
 import { type ReactNode } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
+import { AssistantMark } from "@/components/assistant/AssistantMark";
 
 type Props = {
   title: string;
@@ -8,6 +10,8 @@ type Props = {
   children: ReactNode;
   className?: string;
   bodyClassName?: string;
+  /** Si se define, muestra un botón "Preguntar" que abre /assistant con este prompt. */
+  askPrompt?: string;
 };
 
 export function SectionCard({
@@ -17,11 +21,13 @@ export function SectionCard({
   children,
   className,
   bodyClassName,
+  askPrompt,
 }: Props) {
+  const navigate = useNavigate();
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-xl border border-border bg-card",
+        "group/section relative overflow-hidden rounded-xl border border-border bg-card",
         className,
       )}
     >
@@ -36,7 +42,20 @@ export function SectionCard({
             </p>
           ) : null}
         </div>
-        {actions ? <div className="shrink-0">{actions}</div> : null}
+        <div className="flex shrink-0 items-center gap-1.5">
+          {askPrompt ? (
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/assistant", search: { q: askPrompt } })}
+              title="Preguntar al Studio Assistant sobre esta tarjeta"
+              className="inline-flex items-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-[11.5px] font-medium text-muted-foreground opacity-0 transition hover:border-border hover:bg-background hover:text-foreground focus:opacity-100 group-hover/section:opacity-100"
+            >
+              <AssistantMark className="h-3.5 w-3.5 text-primary" />
+              <span className="hidden md:inline">Preguntar</span>
+            </button>
+          ) : null}
+          {actions}
+        </div>
       </header>
       <div className={cn("p-5", bodyClassName)}>{children}</div>
     </section>

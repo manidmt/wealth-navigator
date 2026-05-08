@@ -75,6 +75,7 @@ function ExpensesPage() {
           <SectionCard
             title="Histórico mensual"
             description="Ingresos, gastos y neto de los últimos 12 cierres."
+            askPrompt="Analiza el histórico de los últimos 12 meses: tendencia de ingresos, gastos y neto, e identifica meses atípicos."
           >
             <MonthlyExpensesBars rows={months} />
           </SectionCard>
@@ -82,6 +83,7 @@ function ExpensesPage() {
           <SectionCard
             title="Top categorías del mes"
             description={`Distribución de ${euro1.format(totalCats)}.`}
+            askPrompt="¿Qué categorías concentran más mi gasto este mes y dónde podría optimizar?"
           >
             <BarList items={top} total={data.expenses.currentMonthTotal} />
           </SectionCard>

@@ -63,6 +63,7 @@ function NetWorthPage() {
         <SectionCard
           title="Evolución del patrimonio neto"
           description="Patrimonio consolidado mes a mes."
+          askPrompt="Describe la evolución de mi patrimonio neto: meses de mayor crecimiento, retrocesos y ritmo medio."
         >
           <NetWorthAreaChart series={series} />
         </SectionCard>
