@@ -11,6 +11,7 @@ import {
 import appCss from "../styles.css?url";
 import { data } from "@/lib/dashboard-data";
 import { AssistantProvider } from "@/components/assistant/AssistantProvider";
+import { ThemeProvider, themeBootScript } from "@/components/app/ThemeProvider";
 
 function NotFoundComponent() {
   return (
@@ -110,6 +111,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
       <body>
         {children}
@@ -124,9 +126,11 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AssistantProvider>
-        <Outlet />
-      </AssistantProvider>
+      <ThemeProvider>
+        <AssistantProvider>
+          <Outlet />
+        </AssistantProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
