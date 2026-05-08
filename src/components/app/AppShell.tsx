@@ -52,6 +52,7 @@ export function AppShell({ children, pageEyebrow }: Props) {
               </div>
               <span className="hidden text-border md:inline">·</span>
               <span className="hidden md:inline">EUR · es-ES</span>
+              <ThemeToggle compact className="ml-1" />
             </div>
           </header>
 
