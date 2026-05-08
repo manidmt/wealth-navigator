@@ -36,6 +36,8 @@ function BalancesPage() {
     const b = bucketFor(h.label, h.category, h.value);
     return { id: i, ...h, bucket: b };
   });
+  const totalAbs = accounts.reduce((acc, a) => acc + Math.abs(a.value), 0);
+  const [selected, setSelected] = useState<Holding | null>(null);
 
   const groups = ["cash", "investable", "other", "liabilities"] as const;
   const grouped = groups.map((g) => ({
@@ -124,14 +126,20 @@ function BalancesPage() {
                     </thead>
                     <tbody className="divide-y divide-border">
                       {g.rows.map((a) => (
-                        <tr key={a.id} className="hover:bg-muted/30">
+                        <tr
+                          key={a.id}
+                          onClick={() => setSelected(a)}
+                          className="cursor-pointer transition hover:bg-muted/40"
+                        >
                           <td className="px-4 py-3 font-medium">{a.label}</td>
                           <td className="px-4 py-3 text-muted-foreground">
                             <Badge variant="secondary" className="font-normal">
                               {a.category ?? "—"}
                             </Badge>
                           </td>
-                          <td className="px-4 py-3 text-muted-foreground">{a.platform}</td>
+                          <td className="px-4 py-3 text-muted-foreground">
+                            <PlatformBadge name={a.platform} />
+                          </td>
                           <td className="px-4 py-3 text-right tabular-nums font-medium">
                             {euro1.format(a.value)}
                           </td>
