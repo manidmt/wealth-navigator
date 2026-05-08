@@ -20,6 +20,7 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
+import { BrandMark } from "@/components/app/BrandMark";
 import { data } from "@/lib/dashboard-data";
 
 type NavItem = {
