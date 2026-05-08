@@ -184,20 +184,20 @@ export function MonthlyExpensesBars({
     Neto: r.net,
   }));
   return (
-    <div className="h-[260px] w-full">
-      <ResponsiveContainer>
-        <ComposedChart data={data} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
+    <ChartMount height={280}>
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart data={data} margin={{ top: 10, right: 8, left: 0, bottom: 8 }}>
           <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="month" tickLine={false} axisLine={false} {...axisStyle} />
           <YAxis tickFormatter={shortEuro} tickLine={false} axisLine={false} width={48} {...axisStyle} />
           <Tooltip contentStyle={tooltipStyle} formatter={(v: any) => euro1.format(Number(v))} />
-          <Bar dataKey="Ingresos" fill="var(--chart-2)" radius={[4, 4, 0, 0]} maxBarSize={26} />
-          <Bar dataKey="Gastos" fill="var(--chart-4)" radius={[4, 4, 0, 0]} maxBarSize={26} />
-          <Line type="monotone" dataKey="Neto" stroke="var(--chart-1)" strokeWidth={2} dot={false} />
           <Legend wrapperStyle={{ fontSize: 11.5, paddingTop: 8 }} iconType="circle" iconSize={8} />
+          <Bar dataKey="Ingresos" fill="var(--chart-2)" radius={[4, 4, 0, 0]} maxBarSize={26} isAnimationActive={false} />
+          <Bar dataKey="Gastos" fill="var(--chart-4)" radius={[4, 4, 0, 0]} maxBarSize={26} isAnimationActive={false} />
+          <Line type="monotone" dataKey="Neto" stroke="var(--chart-1)" strokeWidth={2} dot={false} isAnimationActive={false} />
         </ComposedChart>
       </ResponsiveContainer>
-    </div>
+    </ChartMount>
   );
 }
 
