@@ -9,6 +9,7 @@ import {
   DonutChart,
   NetWorthAreaChart,
 } from "@/components/charts/charts";
+import { InsightsCard } from "@/components/assistant/InsightsCard";
 import {
   data,
   euro,
@@ -93,6 +94,8 @@ function HomePage() {
             />
           </div>
         </section>
+
+        <InsightsCard />
 
         {/* Net worth chart + allocation donut */}
         <section className="grid gap-5 lg:grid-cols-[1.55fr_1fr]">

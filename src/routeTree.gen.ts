@@ -14,6 +14,7 @@ import { Route as PortfolioRouteImport } from './routes/portfolio'
 import { Route as NetWorthRouteImport } from './routes/net-worth'
 import { Route as ExpensesRouteImport } from './routes/expenses'
 import { Route as BalancesRouteImport } from './routes/balances'
+import { Route as AssistantRouteImport } from './routes/assistant'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SettingsRoute = SettingsRouteImport.update({
@@ -41,6 +42,11 @@ const BalancesRoute = BalancesRouteImport.update({
   path: '/balances',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AssistantRoute = AssistantRouteImport.update({
+  id: '/assistant',
+  path: '/assistant',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -49,6 +55,7 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/assistant': typeof AssistantRoute
   '/balances': typeof BalancesRoute
   '/expenses': typeof ExpensesRoute
   '/net-worth': typeof NetWorthRoute
@@ -57,6 +64,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/assistant': typeof AssistantRoute
   '/balances': typeof BalancesRoute
   '/expenses': typeof ExpensesRoute
   '/net-worth': typeof NetWorthRoute
@@ -66,6 +74,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/assistant': typeof AssistantRoute
   '/balances': typeof BalancesRoute
   '/expenses': typeof ExpensesRoute
   '/net-worth': typeof NetWorthRoute
@@ -76,6 +85,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/assistant'
     | '/balances'
     | '/expenses'
     | '/net-worth'
@@ -84,6 +94,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/assistant'
     | '/balances'
     | '/expenses'
     | '/net-worth'
@@ -92,6 +103,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/assistant'
     | '/balances'
     | '/expenses'
     | '/net-worth'
@@ -101,6 +113,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AssistantRoute: typeof AssistantRoute
   BalancesRoute: typeof BalancesRoute
   ExpensesRoute: typeof ExpensesRoute
   NetWorthRoute: typeof NetWorthRoute
@@ -145,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BalancesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/assistant': {
+      id: '/assistant'
+      path: '/assistant'
+      fullPath: '/assistant'
+      preLoaderRoute: typeof AssistantRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -157,6 +177,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AssistantRoute: AssistantRoute,
   BalancesRoute: BalancesRoute,
   ExpensesRoute: ExpensesRoute,
   NetWorthRoute: NetWorthRoute,

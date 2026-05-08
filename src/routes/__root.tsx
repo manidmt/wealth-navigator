@@ -10,6 +10,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { data } from "@/lib/dashboard-data";
+import { AssistantProvider } from "@/components/assistant/AssistantProvider";
 
 function NotFoundComponent() {
   return (
@@ -123,7 +124,9 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <AssistantProvider>
+        <Outlet />
+      </AssistantProvider>
     </QueryClientProvider>
   );
 }
