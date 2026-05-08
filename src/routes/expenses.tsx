@@ -118,6 +118,24 @@ function ExpensesBody() {
         </SectionCard>
       </section>
 
+      <section className="grid gap-5 lg:grid-cols-[1fr_1.4fr]">
+        <SectionCard
+          title="Etiquetas del mes"
+          description="Naturaleza del gasto: una transacción puede llevar varias etiquetas."
+          askPrompt="Analiza la composición del gasto del mes por etiquetas (Esencial, Recurrente, Ocio…) y sugiere qué etiqueta debería vigilar."
+        >
+          <ExpenseTagsBreakdown month={current.month} rangeMonths={months} />
+        </SectionCard>
+
+        <SectionCard
+          title="Etiquetas a lo largo del rango"
+          description={`Evolución de cada etiqueta sobre ${months.length} cierres.`}
+          askPrompt="¿Qué etiquetas de gasto están creciendo más rápido y cuáles bajan en el rango activo?"
+        >
+          <TagTrendGrid months={months} />
+        </SectionCard>
+      </section>
+
       <section>
         <SectionLabel>Detalle por mes</SectionLabel>
         <div className="overflow-hidden rounded-xl border border-border bg-card">
