@@ -184,9 +184,6 @@ function ExpensesBody() {
   );
 }
 
-import { Sparkline } from "@/components/charts/charts";
-import { EXPENSE_TAGS, tagSeries } from "@/lib/expense-tags";
-import type { ExpenseMonth } from "@/lib/dashboard-data";
 
 function TagTrendGrid({ months }: { months: ExpenseMonth[] }) {
   const money = useMoney();
