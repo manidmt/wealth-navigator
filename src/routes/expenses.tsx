@@ -7,6 +7,7 @@ import { DeltaBadge } from "@/components/app/DeltaBadge";
 import { BarList, MonthlyExpensesBars } from "@/components/charts/charts";
 import { RangeProvider, RangeToolbar, useRange } from "@/components/app/RangeToolbar";
 import { MonthDetailDrawer } from "@/components/app/MonthDetailDrawer";
+import { ExpenseTagsBreakdown } from "@/components/app/ExpenseTagsBreakdown";
 import { useMoney } from "@/components/app/CurrencyProvider";
 import { data, formatMonth } from "@/lib/dashboard-data";
 
