@@ -10,6 +10,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { data } from "@/lib/dashboard-data";
+import { AssistantProvider } from "@/components/assistant/AssistantProvider";
 
 function NotFoundComponent() {
   return (
