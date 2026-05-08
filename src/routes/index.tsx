@@ -129,6 +129,7 @@ function HomePage() {
           <SectionCard
             title={`Gasto del mes — ${formatMonth(data.expenses.currentMonth)}`}
             description={`Total ${euro1.format(data.expenses.currentMonthTotal)} · Ingresos ${euro1.format(data.expenses.currentMonthIncome)}`}
+            askPrompt={`Explícame el gasto de ${formatMonth(data.expenses.currentMonth)}: top categorías, anomalías y comparativa con el mes anterior.`}
             actions={
               <Link
                 to="/expenses"
