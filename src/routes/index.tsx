@@ -145,6 +145,7 @@ function HomePage() {
           <SectionCard
             title="Posiciones principales"
             description="Top posiciones por valor de mercado."
+            askPrompt="Comenta mis posiciones principales: peso relativo, riesgo de concentración y posibles ajustes."
             actions={
               <Link
                 to="/portfolio"
