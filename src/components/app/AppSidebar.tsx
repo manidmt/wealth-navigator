@@ -21,14 +21,21 @@ import {
 } from "@/components/ui/sidebar";
 import { data } from "@/lib/dashboard-data";
 
-const items = [
+type NavItem = {
+  title: string;
+  url: "/" | "/expenses" | "/portfolio" | "/net-worth" | "/balances" | "/settings";
+  icon: typeof LayoutDashboard;
+  exact?: boolean;
+};
+
+const items: NavItem[] = [
   { title: "Resumen", url: "/", icon: LayoutDashboard, exact: true },
   { title: "Gastos mensuales", url: "/expenses", icon: Receipt },
   { title: "Portfolio", url: "/portfolio", icon: PieChart },
   { title: "Patrimonio", url: "/net-worth", icon: TrendingUp },
   { title: "Saldos y cierres", url: "/balances", icon: Wallet },
   { title: "Configuración", url: "/settings", icon: Settings },
-] as const;
+];
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
