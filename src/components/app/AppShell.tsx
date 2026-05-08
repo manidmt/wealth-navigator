@@ -2,6 +2,8 @@ import { type ReactNode } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { data, formatMonth } from "@/lib/dashboard-data";
+import { useAssistant } from "@/components/assistant/AssistantProvider";
+import { AssistantMark } from "@/components/assistant/AssistantMark";
 
 type Props = {
   children: ReactNode;
