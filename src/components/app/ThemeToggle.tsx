@@ -8,7 +8,7 @@ type Props = {
 };
 
 export function ThemeToggle({ compact = false, className }: Props) {
-  const { theme, toggle } = useTheme();
+  const { theme, setTheme } = useTheme();
   const isDark = theme === "dark";
 
   if (compact) {
