@@ -16,7 +16,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { euro1, monthShort, type SeriesPoint } from "@/lib/dashboard-data";
+import { monthShort, type SeriesPoint } from "@/lib/dashboard-data";
+import { useMoney } from "@/components/app/CurrencyProvider";
 
 /**
  * Recharts' ResponsiveContainer measures its parent at mount; during SSR /
@@ -63,23 +64,40 @@ const axisStyle = {
   fontFamily: "var(--font-mono)",
 };
 
-function shortEuro(n: number) {
+function shortNumber(n: number) {
   if (Math.abs(n) >= 1000) return `${(n / 1000).toFixed(0)}k`;
   return String(Math.round(n));
 }
 
 /* ----------------------------- Net worth area ---------------------------- */
 
-export function NetWorthAreaChart({ series }: { series: SeriesPoint[] }) {
+export function NetWorthAreaChart({
+  series,
+  onSelectMonth,
+}: {
+  series: SeriesPoint[];
+  onSelectMonth?: (month: string) => void;
+}) {
+  const money = useMoney();
   const rows = series.map((p) => ({
     month: monthShort(p.month) + " " + p.month.slice(2, 4),
-    netWorth: p.netWorth,
-    assets: p.assets,
+    rawMonth: p.month,
+    netWorth: money.convert(p.netWorth),
+    assets: money.convert(p.assets),
   }));
+  const handleClick = (e: { activePayload?: { payload: { rawMonth: string } }[] }) => {
+    const m = e?.activePayload?.[0]?.payload?.rawMonth;
+    if (m && onSelectMonth) onSelectMonth(m);
+  };
   return (
     <ChartMount height={280}>
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={rows} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+        <AreaChart
+          data={rows}
+          margin={{ top: 10, right: 12, left: 0, bottom: 0 }}
+          onClick={handleClick as never}
+          style={onSelectMonth ? { cursor: "pointer" } : undefined}
+        >
           <defs>
             <linearGradient id="nwFill" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.35} />
@@ -89,7 +107,7 @@ export function NetWorthAreaChart({ series }: { series: SeriesPoint[] }) {
           <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="month" tickLine={false} axisLine={false} {...axisStyle} />
           <YAxis
-            tickFormatter={shortEuro}
+            tickFormatter={shortNumber}
             tickLine={false}
             axisLine={false}
             width={48}
@@ -98,7 +116,13 @@ export function NetWorthAreaChart({ series }: { series: SeriesPoint[] }) {
           <Tooltip
             cursor={{ stroke: "var(--border-strong)", strokeWidth: 1 }}
             contentStyle={tooltipStyle}
-            formatter={(v: any) => euro1.format(Number(v))}
+            formatter={(v: unknown) =>
+              new Intl.NumberFormat("es-ES", {
+                style: "currency",
+                currency: money.code,
+                maximumFractionDigits: 1,
+              }).format(Number(v))
+            }
           />
           <Area
             type="monotone"
@@ -108,6 +132,7 @@ export function NetWorthAreaChart({ series }: { series: SeriesPoint[] }) {
             fill="url(#nwFill)"
             name="Patrimonio"
             isAnimationActive={false}
+            activeDot={{ r: 5, strokeWidth: 2, stroke: "var(--background)" }}
           />
         </AreaChart>
       </ResponsiveContainer>
@@ -124,14 +149,16 @@ export function DonutChart({
   data: { label: string; value: number }[];
   total?: number;
 }) {
+  const money = useMoney();
   const sum = total ?? data.reduce((acc, d) => acc + d.value, 0);
+  const converted = data.map((d) => ({ ...d, value: money.convert(d.value) }));
   return (
     <div className="relative">
       <ChartMount height={240}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
-              data={data}
+              data={converted}
               dataKey="value"
               nameKey="label"
               innerRadius={70}
@@ -141,13 +168,20 @@ export function DonutChart({
               strokeWidth={2}
               isAnimationActive={false}
             >
-              {data.map((_, i) => (
+              {converted.map((_, i) => (
                 <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
               ))}
             </Pie>
             <Tooltip
               contentStyle={tooltipStyle}
-              formatter={(v: any, n: any) => [euro1.format(Number(v)), String(n)]}
+              formatter={(v: unknown, n: unknown) => [
+                new Intl.NumberFormat("es-ES", {
+                  style: "currency",
+                  currency: money.code,
+                  maximumFractionDigits: 1,
+                }).format(Number(v)),
+                String(n),
+              ]}
             />
             <Legend
               verticalAlign="bottom"
@@ -163,7 +197,7 @@ export function DonutChart({
           Total
         </div>
         <div className="font-display text-xl font-semibold tabular-nums">
-          {euro1.format(sum)}
+          {money.format1(sum)}
         </div>
       </div>
     </div>
@@ -174,23 +208,45 @@ export function DonutChart({
 
 export function MonthlyExpensesBars({
   rows,
+  onSelectMonth,
 }: {
   rows: { month: string; expenseTotal: number; incomeTotal: number; net: number }[];
+  onSelectMonth?: (month: string) => void;
 }) {
+  const money = useMoney();
   const data = rows.map((r) => ({
     month: monthShort(r.month),
-    Gastos: r.expenseTotal,
-    Ingresos: r.incomeTotal,
-    Neto: r.net,
+    rawMonth: r.month,
+    Gastos: money.convert(r.expenseTotal),
+    Ingresos: money.convert(r.incomeTotal),
+    Neto: money.convert(r.net),
   }));
+  const handleClick = (e: { activePayload?: { payload: { rawMonth: string } }[] }) => {
+    const m = e?.activePayload?.[0]?.payload?.rawMonth;
+    if (m && onSelectMonth) onSelectMonth(m);
+  };
   return (
     <ChartMount height={280}>
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={data} margin={{ top: 10, right: 8, left: 0, bottom: 8 }}>
+        <ComposedChart
+          data={data}
+          margin={{ top: 10, right: 8, left: 0, bottom: 8 }}
+          onClick={handleClick as never}
+          style={onSelectMonth ? { cursor: "pointer" } : undefined}
+        >
           <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="month" tickLine={false} axisLine={false} {...axisStyle} />
-          <YAxis tickFormatter={shortEuro} tickLine={false} axisLine={false} width={48} {...axisStyle} />
-          <Tooltip contentStyle={tooltipStyle} formatter={(v: any) => euro1.format(Number(v))} />
+          <YAxis tickFormatter={shortNumber} tickLine={false} axisLine={false} width={48} {...axisStyle} />
+          <Tooltip
+            contentStyle={tooltipStyle}
+            formatter={(v: unknown) =>
+              new Intl.NumberFormat("es-ES", {
+                style: "currency",
+                currency: money.code,
+                maximumFractionDigits: 1,
+              }).format(Number(v))
+            }
+          />
           <Legend wrapperStyle={{ fontSize: 11.5, paddingTop: 8 }} iconType="circle" iconSize={8} />
           <Bar dataKey="Ingresos" fill="var(--chart-2)" radius={[4, 4, 0, 0]} maxBarSize={26} isAnimationActive={false} />
           <Bar dataKey="Gastos" fill="var(--chart-4)" radius={[4, 4, 0, 0]} maxBarSize={26} isAnimationActive={false} />
@@ -210,6 +266,7 @@ export function BarList({
   items: { label: string; value: number }[];
   total?: number;
 }) {
+  const money = useMoney();
   const sum = total ?? items.reduce((a, b) => a + b.value, 0);
   return (
     <ul className="space-y-3">
@@ -220,7 +277,7 @@ export function BarList({
             <div className="mb-1 flex items-baseline justify-between gap-2 text-[12.5px]">
               <span className="truncate text-foreground">{it.label}</span>
               <span className="shrink-0 text-muted-foreground tabular-nums">
-                {euro1.format(it.value)}{" "}
+                {money.format1(it.value)}{" "}
                 <span className="text-muted-foreground/70">· {pct.toFixed(1)}%</span>
               </span>
             </div>

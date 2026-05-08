@@ -12,6 +12,7 @@ import appCss from "../styles.css?url";
 import { data } from "@/lib/dashboard-data";
 import { AssistantProvider } from "@/components/assistant/AssistantProvider";
 import { ThemeProvider, themeBootScript } from "@/components/app/ThemeProvider";
+import { CurrencyProvider } from "@/components/app/CurrencyProvider";
 
 function NotFoundComponent() {
   return (
@@ -127,9 +128,11 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <AssistantProvider>
-          <Outlet />
-        </AssistantProvider>
+        <CurrencyProvider>
+          <AssistantProvider>
+            <Outlet />
+          </AssistantProvider>
+        </CurrencyProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

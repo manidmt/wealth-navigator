@@ -2,7 +2,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { PlatformBadge } from "./PlatformBadge";
 import { AssistantMark } from "@/components/assistant/AssistantMark";
-import { euro1, type Holding } from "@/lib/dashboard-data";
+import { useMoney } from "@/components/app/CurrencyProvider";
+import { type Holding } from "@/lib/dashboard-data";
 
 type Props = {
   holding: Holding | null;
@@ -14,6 +15,7 @@ type Props = {
 
 export function HoldingDrawer({ holding, total, open, onOpenChange }: Props) {
   const navigate = useNavigate();
+  const money = useMoney();
   if (!holding) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
@@ -45,7 +47,7 @@ export function HoldingDrawer({ holding, total, open, onOpenChange }: Props) {
         </SheetHeader>
 
         <div className="mt-6 grid gap-3 px-4 sm:grid-cols-2">
-          <Stat label="Valor" value={euro1.format(holding.value)} accent={isLiability ? "negative" : undefined} />
+          <Stat label="Valor" value={money.format1(holding.value)} accent={isLiability ? "negative" : undefined} />
           <Stat label="Peso del portfolio" value={`${weight.toFixed(2)}%`} />
           <Stat label="Tipo" value={holding.category ?? "—"} />
           <Stat label="Plataforma" value={holding.platform} />
