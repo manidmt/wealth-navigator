@@ -206,6 +206,13 @@ function BalancesPage() {
           </div>
         </section>
       </div>
+
+      <HoldingDrawer
+        holding={selected}
+        total={totalAbs}
+        open={!!selected}
+        onOpenChange={(o) => (o ? null : setSelected(null))}
+      />
     </AppShell>
   );
 }
