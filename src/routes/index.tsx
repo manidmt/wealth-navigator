@@ -95,6 +95,8 @@ function HomePage() {
           </div>
         </section>
 
+        <InsightsCard />
+
         {/* Net worth chart + allocation donut */}
         <section className="grid gap-5 lg:grid-cols-[1.55fr_1fr]">
           <SectionCard
