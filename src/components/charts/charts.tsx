@@ -1,10 +1,8 @@
-"use client";
-
+import { useEffect, useState, type ReactNode } from "react";
 import {
   Area,
   AreaChart,
   Bar,
-  BarChart,
   CartesianGrid,
   Cell,
   ComposedChart,
@@ -19,6 +17,27 @@ import {
   YAxis,
 } from "recharts";
 import { euro1, monthShort, type SeriesPoint } from "@/lib/dashboard-data";
+
+/**
+ * Recharts' ResponsiveContainer measures its parent at mount; during SSR /
+ * the first hydration pass it has zero size and the chart renders empty
+ * (requiring a hard refresh). Gating render behind a mount flag avoids the
+ * mismatch and forces a clean client-side measure.
+ */
+function ChartMount({ children, height }: { children: ReactNode; height: number }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) {
+    return (
+      <div
+        className="w-full animate-pulse rounded-md bg-muted/40"
+        style={{ height }}
+        aria-hidden
+      />
+    );
+  }
+  return <div style={{ height, width: "100%" }}>{children}</div>;
+}
 
 const CHART_COLORS = [
   "var(--chart-1)",
@@ -58,8 +77,8 @@ export function NetWorthAreaChart({ series }: { series: SeriesPoint[] }) {
     assets: p.assets,
   }));
   return (
-    <div className="h-[280px] w-full">
-      <ResponsiveContainer>
+    <ChartMount height={280}>
+      <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={rows} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="nwFill" x1="0" y1="0" x2="0" y2="1">
@@ -88,10 +107,11 @@ export function NetWorthAreaChart({ series }: { series: SeriesPoint[] }) {
             strokeWidth={2}
             fill="url(#nwFill)"
             name="Patrimonio"
+            isAnimationActive={false}
           />
         </AreaChart>
       </ResponsiveContainer>
-    </div>
+    </ChartMount>
   );
 }
 
@@ -106,35 +126,38 @@ export function DonutChart({
 }) {
   const sum = total ?? data.reduce((acc, d) => acc + d.value, 0);
   return (
-    <div className="relative h-[240px] w-full">
-      <ResponsiveContainer>
-        <PieChart>
-          <Pie
-            data={data}
-            dataKey="value"
-            nameKey="label"
-            innerRadius={70}
-            outerRadius={100}
-            paddingAngle={2}
-            stroke="var(--card)"
-            strokeWidth={2}
-          >
-            {data.map((_, i) => (
-              <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip
-            contentStyle={tooltipStyle}
-            formatter={(v: any, n: any) => [euro1.format(Number(v)), String(n)]}
-          />
-          <Legend
-            verticalAlign="bottom"
-            iconType="circle"
-            iconSize={8}
-            wrapperStyle={{ fontSize: 11.5, color: "var(--muted-foreground)" }}
-          />
-        </PieChart>
-      </ResponsiveContainer>
+    <div className="relative">
+      <ChartMount height={240}>
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey="value"
+              nameKey="label"
+              innerRadius={70}
+              outerRadius={100}
+              paddingAngle={2}
+              stroke="var(--card)"
+              strokeWidth={2}
+              isAnimationActive={false}
+            >
+              {data.map((_, i) => (
+                <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip
+              contentStyle={tooltipStyle}
+              formatter={(v: any, n: any) => [euro1.format(Number(v)), String(n)]}
+            />
+            <Legend
+              verticalAlign="bottom"
+              iconType="circle"
+              iconSize={8}
+              wrapperStyle={{ fontSize: 11.5, color: "var(--muted-foreground)" }}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      </ChartMount>
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center pb-12">
         <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
           Total
@@ -161,20 +184,20 @@ export function MonthlyExpensesBars({
     Neto: r.net,
   }));
   return (
-    <div className="h-[260px] w-full">
-      <ResponsiveContainer>
-        <ComposedChart data={data} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
+    <ChartMount height={280}>
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart data={data} margin={{ top: 10, right: 8, left: 0, bottom: 8 }}>
           <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="month" tickLine={false} axisLine={false} {...axisStyle} />
           <YAxis tickFormatter={shortEuro} tickLine={false} axisLine={false} width={48} {...axisStyle} />
           <Tooltip contentStyle={tooltipStyle} formatter={(v: any) => euro1.format(Number(v))} />
-          <Bar dataKey="Ingresos" fill="var(--chart-2)" radius={[4, 4, 0, 0]} maxBarSize={26} />
-          <Bar dataKey="Gastos" fill="var(--chart-4)" radius={[4, 4, 0, 0]} maxBarSize={26} />
-          <Line type="monotone" dataKey="Neto" stroke="var(--chart-1)" strokeWidth={2} dot={false} />
           <Legend wrapperStyle={{ fontSize: 11.5, paddingTop: 8 }} iconType="circle" iconSize={8} />
+          <Bar dataKey="Ingresos" fill="var(--chart-2)" radius={[4, 4, 0, 0]} maxBarSize={26} isAnimationActive={false} />
+          <Bar dataKey="Gastos" fill="var(--chart-4)" radius={[4, 4, 0, 0]} maxBarSize={26} isAnimationActive={false} />
+          <Line type="monotone" dataKey="Neto" stroke="var(--chart-1)" strokeWidth={2} dot={false} isAnimationActive={false} />
         </ComposedChart>
       </ResponsiveContainer>
-    </div>
+    </ChartMount>
   );
 }
 
@@ -222,8 +245,8 @@ export function BarList({
 export function Sparkline({ values, color }: { values: number[]; color?: string }) {
   const data = values.map((v, i) => ({ i, v }));
   return (
-    <div className="h-10 w-full">
-      <ResponsiveContainer>
+    <ChartMount height={40}>
+      <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data}>
           <Line
             type="monotone"
@@ -231,9 +254,10 @@ export function Sparkline({ values, color }: { values: number[]; color?: string 
             stroke={color ?? "var(--chart-1)"}
             strokeWidth={1.75}
             dot={false}
+            isAnimationActive={false}
           />
         </LineChart>
       </ResponsiveContainer>
-    </div>
+    </ChartMount>
   );
 }
