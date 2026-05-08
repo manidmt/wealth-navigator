@@ -6,7 +6,8 @@ import { KpiCard } from "@/components/app/KpiCard";
 import { Badge } from "@/components/ui/badge";
 import { PlatformBadge } from "@/components/app/PlatformBadge";
 import { HoldingDrawer } from "@/components/app/HoldingDrawer";
-import { data, euro, euro1, formatMonth, type Holding } from "@/lib/dashboard-data";
+import { useMoney } from "@/components/app/CurrencyProvider";
+import { data, formatMonth, type Holding } from "@/lib/dashboard-data";
 
 export const Route = createFileRoute("/balances")({
   head: () => ({
@@ -32,6 +33,7 @@ const bucketFor = (label: string, category?: string, value = 0) => {
 };
 
 function BalancesPage() {
+  const money = useMoney();
   const accounts = data.holdings.map((h, i) => {
     const b = bucketFor(h.label, h.category, h.value);
     return { id: i, ...h, bucket: b };
@@ -81,20 +83,20 @@ function BalancesPage() {
           <KpiCard
             accent="primary"
             label="Activos totales"
-            value={euro.format(totalAssets)}
+            value={money.format(totalAssets)}
             hint={`${accounts.filter((a) => a.value >= 0).length} cuentas`}
             series={assetsTrend}
           />
           <KpiCard
             label="Pasivos"
-            value={euro.format(totalLiab)}
+            value={money.format(totalLiab)}
             hint="Saldo agregado de deudas"
             series={liabTrend}
             sparkColor="var(--negative)"
           />
           <KpiCard
             label="Patrimonio"
-            value={euro.format(totalAssets - totalLiab)}
+            value={money.format(totalAssets - totalLiab)}
             hint="Activos menos pasivos"
             series={netTrend}
           />
@@ -111,7 +113,7 @@ function BalancesPage() {
               <SectionCard
                 key={g.key}
                 title={g.label}
-                description={`${g.rows.length} posiciones · ${euro1.format(g.total)}`}
+                description={`${g.rows.length} posiciones · ${money.format1(g.total)}`}
                 askPrompt={`Resume mis cuentas de tipo "${g.label}": cuáles destacan y si hay algo a vigilar.`}
               >
                 <div className="overflow-hidden rounded-lg border border-border">
@@ -141,7 +143,7 @@ function BalancesPage() {
                             <PlatformBadge name={a.platform} />
                           </td>
                           <td className="px-4 py-3 text-right tabular-nums font-medium">
-                            {euro1.format(a.value)}
+                            {money.format1(a.value)}
                           </td>
                         </tr>
                       ))}
@@ -172,16 +174,16 @@ function BalancesPage() {
                   <tr key={p.month} className="hover:bg-muted/30">
                     <td className="px-4 py-3 font-medium">{formatMonth(p.month)}</td>
                     <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
-                      {euro1.format(p.assets)}
+                      {money.format1(p.assets)}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
-                      {euro1.format(p.liabilities)}
+                      {money.format1(p.liabilities)}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums font-medium">
-                      {euro1.format(p.netWorth)}
+                      {money.format1(p.netWorth)}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
-                      {euro1.format(p.savings)}
+                      {money.format1(p.savings)}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <span
