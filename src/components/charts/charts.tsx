@@ -245,8 +245,8 @@ export function BarList({
 export function Sparkline({ values, color }: { values: number[]; color?: string }) {
   const data = values.map((v, i) => ({ i, v }));
   return (
-    <div className="h-10 w-full">
-      <ResponsiveContainer>
+    <ChartMount height={40}>
+      <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data}>
           <Line
             type="monotone"
@@ -254,9 +254,10 @@ export function Sparkline({ values, color }: { values: number[]; color?: string 
             stroke={color ?? "var(--chart-1)"}
             strokeWidth={1.75}
             dot={false}
+            isAnimationActive={false}
           />
         </LineChart>
       </ResponsiveContainer>
-    </div>
+    </ChartMount>
   );
 }
