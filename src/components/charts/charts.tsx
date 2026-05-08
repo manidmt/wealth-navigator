@@ -126,35 +126,38 @@ export function DonutChart({
 }) {
   const sum = total ?? data.reduce((acc, d) => acc + d.value, 0);
   return (
-    <div className="relative h-[240px] w-full">
-      <ResponsiveContainer>
-        <PieChart>
-          <Pie
-            data={data}
-            dataKey="value"
-            nameKey="label"
-            innerRadius={70}
-            outerRadius={100}
-            paddingAngle={2}
-            stroke="var(--card)"
-            strokeWidth={2}
-          >
-            {data.map((_, i) => (
-              <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip
-            contentStyle={tooltipStyle}
-            formatter={(v: any, n: any) => [euro1.format(Number(v)), String(n)]}
-          />
-          <Legend
-            verticalAlign="bottom"
-            iconType="circle"
-            iconSize={8}
-            wrapperStyle={{ fontSize: 11.5, color: "var(--muted-foreground)" }}
-          />
-        </PieChart>
-      </ResponsiveContainer>
+    <div className="relative">
+      <ChartMount height={240}>
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey="value"
+              nameKey="label"
+              innerRadius={70}
+              outerRadius={100}
+              paddingAngle={2}
+              stroke="var(--card)"
+              strokeWidth={2}
+              isAnimationActive={false}
+            >
+              {data.map((_, i) => (
+                <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip
+              contentStyle={tooltipStyle}
+              formatter={(v: any, n: any) => [euro1.format(Number(v)), String(n)]}
+            />
+            <Legend
+              verticalAlign="bottom"
+              iconType="circle"
+              iconSize={8}
+              wrapperStyle={{ fontSize: 11.5, color: "var(--muted-foreground)" }}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      </ChartMount>
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center pb-12">
         <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
           Total
