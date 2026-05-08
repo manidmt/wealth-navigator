@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { AppShell } from "@/components/app/AppShell";
 import { PageHeader, SectionCard, SectionLabel } from "@/components/app/SectionCard";
 import { KpiCard } from "@/components/app/KpiCard";
 import { Badge } from "@/components/ui/badge";
-import { data, euro, euro1, formatMonth } from "@/lib/dashboard-data";
+import { PlatformBadge } from "@/components/app/PlatformBadge";
+import { HoldingDrawer } from "@/components/app/HoldingDrawer";
+import { data, euro, euro1, formatMonth, type Holding } from "@/lib/dashboard-data";
 
 export const Route = createFileRoute("/balances")({
   head: () => ({
