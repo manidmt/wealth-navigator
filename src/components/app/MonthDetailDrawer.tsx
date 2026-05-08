@@ -9,6 +9,7 @@ import {
 import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { useMoney } from "@/components/app/CurrencyProvider";
 import { DeltaBadge } from "@/components/app/DeltaBadge";
+import { ExpenseTagsBreakdown } from "@/components/app/ExpenseTagsBreakdown";
 import { data, formatMonth, type SeriesPoint, type ExpenseMonth } from "@/lib/dashboard-data";
 
 type Props = {
