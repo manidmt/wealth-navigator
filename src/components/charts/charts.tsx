@@ -163,7 +163,7 @@ export function MonthlyExpensesBars({
   return (
     <div className="h-[260px] w-full">
       <ResponsiveContainer>
-        <BarChart data={data} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
+        <ComposedChart data={data} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
           <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="month" tickLine={false} axisLine={false} {...axisStyle} />
           <YAxis tickFormatter={shortEuro} tickLine={false} axisLine={false} width={48} {...axisStyle} />
@@ -172,7 +172,7 @@ export function MonthlyExpensesBars({
           <Bar dataKey="Gastos" fill="var(--chart-4)" radius={[4, 4, 0, 0]} maxBarSize={26} />
           <Line type="monotone" dataKey="Neto" stroke="var(--chart-1)" strokeWidth={2} dot={false} />
           <Legend wrapperStyle={{ fontSize: 11.5, paddingTop: 8 }} iconType="circle" iconSize={8} />
-        </BarChart>
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   );
