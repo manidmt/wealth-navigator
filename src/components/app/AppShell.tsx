@@ -32,6 +32,19 @@ export function AppShell({ children, pageEyebrow }: Props) {
             </div>
 
             <div className="flex items-center gap-3 text-[12px] text-muted-foreground">
+              <button
+                type="button"
+                onClick={assistant.open}
+                title="Studio Assistant (⌘K)"
+                className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-2.5 py-1.5 text-[11.5px] font-medium text-foreground/80 transition hover:border-border-strong hover:text-foreground"
+              >
+                <AssistantMark className="h-3.5 w-3.5 text-primary" />
+                <span className="hidden sm:inline">Preguntar</span>
+                <kbd className="hidden rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
+                  ⌘K
+                </kbd>
+              </button>
+              <span className="hidden text-border md:inline">·</span>
               <div className="hidden items-center gap-1.5 sm:flex">
                 <span className="h-1.5 w-1.5 rounded-full bg-positive" />
                 <span>Cierre {formatMonth(data.latestMonth)}</span>
