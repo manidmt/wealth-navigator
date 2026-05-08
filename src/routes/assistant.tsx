@@ -295,7 +295,7 @@ function Composer({
   onChange: (v: string) => void;
   onSubmit: () => void;
   busy: boolean;
-  inputRef: React.RefObject<HTMLTextAreaElement>;
+  inputRef: RefObject<HTMLTextAreaElement | null>;
 }) {
   return (
     <div className="border-t border-border bg-muted/20 p-3">
