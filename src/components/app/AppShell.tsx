@@ -4,6 +4,7 @@ import { AppSidebar } from "./AppSidebar";
 import { data, formatMonth } from "@/lib/dashboard-data";
 import { useAssistant } from "@/components/assistant/AssistantProvider";
 import { AssistantMark } from "@/components/assistant/AssistantMark";
+import { ThemeToggle } from "@/components/app/ThemeToggle";
 
 type Props = {
   children: ReactNode;
