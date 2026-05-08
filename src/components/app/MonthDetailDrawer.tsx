@@ -9,6 +9,7 @@ import {
 import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { useMoney } from "@/components/app/CurrencyProvider";
 import { DeltaBadge } from "@/components/app/DeltaBadge";
+import { ExpenseTagsBreakdown } from "@/components/app/ExpenseTagsBreakdown";
 import { data, formatMonth, type SeriesPoint, type ExpenseMonth } from "@/lib/dashboard-data";
 
 type Props = {
@@ -124,6 +125,19 @@ export function MonthDetailDrawer({ month, open, onOpenChange }: Props) {
                 No hay desglose de gastos registrado para este mes.
               </div>
             )}
+
+            {exp ? (
+              <div>
+                <div className="mb-2 text-[10.5px] uppercase tracking-[0.16em] text-muted-foreground">
+                  Etiquetas del mes
+                </div>
+                <ExpenseTagsBreakdown
+                  month={month}
+                  rangeMonths={data.expenses.byMonth}
+                  compact
+                />
+              </div>
+            ) : null}
           </div>
         ) : (
           <div className="mt-6 px-4 text-[12.5px] text-muted-foreground">
