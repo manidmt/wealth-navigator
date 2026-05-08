@@ -11,6 +11,7 @@ import {
 import appCss from "../styles.css?url";
 import { data } from "@/lib/dashboard-data";
 import { AssistantProvider } from "@/components/assistant/AssistantProvider";
+import { ThemeProvider, themeBootScript } from "@/components/app/ThemeProvider";
 
 function NotFoundComponent() {
   return (
