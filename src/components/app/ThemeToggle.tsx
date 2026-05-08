@@ -15,7 +15,7 @@ export function ThemeToggle({ compact = false, className }: Props) {
     return (
       <button
         type="button"
-        onClick={toggle}
+        onClick={() => setTheme(isDark ? "light" : "dark")}
         title={isDark ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
         aria-label="Cambiar tema"
         className={
@@ -50,7 +50,7 @@ export function ThemeToggle({ compact = false, className }: Props) {
             type="button"
             role="radio"
             aria-checked={active}
-            onClick={() => useTheme && (active ? null : toggle())}
+            onClick={() => setTheme(v)}
             className={
               "inline-flex items-center gap-1.5 rounded-[5px] px-2.5 py-1 text-[12px] font-medium transition " +
               (active
