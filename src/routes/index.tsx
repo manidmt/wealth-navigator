@@ -9,6 +9,7 @@ import {
   DonutChart,
   NetWorthAreaChart,
 } from "@/components/charts/charts";
+import { InsightsCard } from "@/components/assistant/InsightsCard";
 import {
   data,
   euro,
