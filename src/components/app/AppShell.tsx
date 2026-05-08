@@ -6,7 +6,6 @@ import { useAssistant } from "@/components/assistant/AssistantProvider";
 import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { ThemeToggle } from "@/components/app/ThemeToggle";
 import { CurrencySwitcher } from "@/components/app/CurrencySwitcher";
-import { useMoney } from "@/components/app/CurrencyProvider";
 
 type Props = {
   children: ReactNode;
@@ -16,7 +15,6 @@ type Props = {
 
 export function AppShell({ children, pageEyebrow }: Props) {
   const assistant = useAssistant();
-  const money = useMoney();
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
