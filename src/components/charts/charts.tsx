@@ -1,10 +1,8 @@
-"use client";
-
+import { useEffect, useState, type ReactNode } from "react";
 import {
   Area,
   AreaChart,
   Bar,
-  BarChart,
   CartesianGrid,
   Cell,
   ComposedChart,
@@ -19,6 +17,27 @@ import {
   YAxis,
 } from "recharts";
 import { euro1, monthShort, type SeriesPoint } from "@/lib/dashboard-data";
+
+/**
+ * Recharts' ResponsiveContainer measures its parent at mount; during SSR /
+ * the first hydration pass it has zero size and the chart renders empty
+ * (requiring a hard refresh). Gating render behind a mount flag avoids the
+ * mismatch and forces a clean client-side measure.
+ */
+function ChartMount({ children, height }: { children: ReactNode; height: number }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) {
+    return (
+      <div
+        className="w-full animate-pulse rounded-md bg-muted/40"
+        style={{ height }}
+        aria-hidden
+      />
+    );
+  }
+  return <div style={{ height, width: "100%" }}>{children}</div>;
+}
 
 const CHART_COLORS = [
   "var(--chart-1)",
