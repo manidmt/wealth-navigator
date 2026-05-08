@@ -6,6 +6,7 @@ import {
   TrendingUp,
   Wallet,
   Settings,
+  MessageSquareText,
 } from "lucide-react";
 import {
   Sidebar,
@@ -23,7 +24,7 @@ import { data } from "@/lib/dashboard-data";
 
 type NavItem = {
   title: string;
-  url: "/" | "/expenses" | "/portfolio" | "/net-worth" | "/balances" | "/settings";
+  url: "/" | "/expenses" | "/portfolio" | "/net-worth" | "/balances" | "/settings" | "/assistant";
   icon: typeof LayoutDashboard;
   exact?: boolean;
 };
@@ -34,6 +35,7 @@ const items: NavItem[] = [
   { title: "Portfolio", url: "/portfolio", icon: PieChart },
   { title: "Patrimonio", url: "/net-worth", icon: TrendingUp },
   { title: "Saldos y cierres", url: "/balances", icon: Wallet },
+  { title: "Studio Assistant", url: "/assistant", icon: MessageSquareText },
   { title: "Configuración", url: "/settings", icon: Settings },
 ];
 
