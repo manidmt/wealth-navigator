@@ -56,6 +56,13 @@ function BalancesPage() {
     .reduce((acc, g) => acc + g.total, 0);
   const totalLiab = Math.abs(grouped.find((g) => g.key === "liabilities")?.total ?? 0);
 
+  // Trends from the closure history for the KPI sparklines
+  const trail = data.series.slice(-12);
+  const assetsTrend = trail.map((p) => p.assets);
+  const liabTrend = trail.map((p) => Math.abs(p.liabilities));
+  const netTrend = trail.map((p) => p.netWorth);
+  const closureCount = data.series.length;
+
   return (
     <AppShell pageEyebrow="Cuentas y snapshots">
       <PageHeader
@@ -66,17 +73,30 @@ function BalancesPage() {
 
       <div className="space-y-10 px-4 py-8 md:px-8">
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <KpiCard accent="primary" label="Activos totales" value={euro.format(totalAssets)} />
-          <KpiCard label="Pasivos" value={euro.format(totalLiab)} />
+          <KpiCard
+            accent="primary"
+            label="Activos totales"
+            value={euro.format(totalAssets)}
+            hint={`${accounts.filter((a) => a.value >= 0).length} cuentas`}
+            series={assetsTrend}
+          />
+          <KpiCard
+            label="Pasivos"
+            value={euro.format(totalLiab)}
+            hint="Saldo agregado de deudas"
+            series={liabTrend}
+            sparkColor="var(--negative)"
+          />
           <KpiCard
             label="Patrimonio"
             value={euro.format(totalAssets - totalLiab)}
             hint="Activos menos pasivos"
+            series={netTrend}
           />
           <KpiCard
-            label="Cuentas"
-            value={String(accounts.length)}
-            hint="Posiciones agregadas"
+            label="Cierres registrados"
+            value={String(closureCount)}
+            hint={`${accounts.length} cuentas vivas`}
           />
         </section>
 
