@@ -4,12 +4,13 @@ import { AppShell } from "@/components/app/AppShell";
 import { PageHeader, SectionCard, SectionLabel } from "@/components/app/SectionCard";
 import { KpiCard } from "@/components/app/KpiCard";
 import { DeltaBadge } from "@/components/app/DeltaBadge";
-import { BarList, MonthlyExpensesBars } from "@/components/charts/charts";
+import { BarList, MonthlyExpensesBars, Sparkline } from "@/components/charts/charts";
 import { RangeProvider, RangeToolbar, useRange } from "@/components/app/RangeToolbar";
 import { MonthDetailDrawer } from "@/components/app/MonthDetailDrawer";
 import { ExpenseTagsBreakdown } from "@/components/app/ExpenseTagsBreakdown";
 import { useMoney } from "@/components/app/CurrencyProvider";
-import { data, formatMonth } from "@/lib/dashboard-data";
+import { EXPENSE_TAGS, tagSeries } from "@/lib/expense-tags";
+import { data, formatMonth, type ExpenseMonth } from "@/lib/dashboard-data";
 
 export const Route = createFileRoute("/expenses")({
   head: () => ({
