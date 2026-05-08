@@ -6,7 +6,8 @@ import { KpiCard } from "@/components/app/KpiCard";
 import { PlatformBadge } from "@/components/app/PlatformBadge";
 import { HoldingDrawer } from "@/components/app/HoldingDrawer";
 import { BarList, DonutChart } from "@/components/charts/charts";
-import { data, euro, euro1, type Holding } from "@/lib/dashboard-data";
+import { useMoney } from "@/components/app/CurrencyProvider";
+import { data, type Holding } from "@/lib/dashboard-data";
 
 export const Route = createFileRoute("/portfolio")({
   head: () => ({
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/portfolio")({
 });
 
 function PortfolioPage() {
+  const money = useMoney();
   const holdings = [...data.portfolio.holdings].sort((a, b) => b.value - a.value);
   const total = holdings.reduce((a, b) => a + b.value, 0);
   const byPlatform = data.portfolio.byPlatform ?? [];
@@ -44,10 +46,10 @@ function PortfolioPage() {
 
       <div className="space-y-10 px-4 py-8 md:px-8">
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <KpiCard accent="primary" label="Valor de mercado" value={euro.format(total)} hint={`${holdings.length} posiciones activas`} />
+          <KpiCard accent="primary" label="Valor de mercado" value={money.format(total)} hint={`${holdings.length} posiciones activas`} />
           <KpiCard label="Plataformas" value={String(byPlatform.length || new Set(holdings.map((h) => h.platform)).size)} hint="Brokers y wallets agregados" />
           <KpiCard label="Categorías" value={String(byCategory.length)} hint="Tipos de activo" />
-          <KpiCard label="Mayor posición" value={holdings[0] ? euro1.format(holdings[0].value) : "—"} hint={holdings[0]?.label ?? ""} />
+          <KpiCard label="Mayor posición" value={holdings[0] ? money.format1(holdings[0].value) : "—"} hint={holdings[0]?.label ?? ""} />
         </section>
 
         <section className="grid gap-5 lg:grid-cols-2">
@@ -89,7 +91,7 @@ function PortfolioPage() {
                       <td className="px-4 py-3 text-muted-foreground">
                         <PlatformBadge name={h.platform} />
                       </td>
-                      <td className="px-4 py-3 text-right tabular-nums font-medium">{euro1.format(h.value)}</td>
+                      <td className="px-4 py-3 text-right tabular-nums font-medium">{money.format1(h.value)}</td>
                       <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{w.toFixed(1)}%</td>
                     </tr>
                   );
