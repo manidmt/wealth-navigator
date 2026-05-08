@@ -1,11 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { AppShell } from "@/components/app/AppShell";
 import { PageHeader, SectionCard, SectionLabel } from "@/components/app/SectionCard";
 import { KpiCard } from "@/components/app/KpiCard";
 import { DeltaBadge } from "@/components/app/DeltaBadge";
 import { NetWorthAreaChart } from "@/components/charts/charts";
 import { RangeProvider, RangeToolbar, useRange } from "@/components/app/RangeToolbar";
-import { data, euro, euro1, formatMonth } from "@/lib/dashboard-data";
+import { MonthDetailDrawer } from "@/components/app/MonthDetailDrawer";
+import { useMoney } from "@/components/app/CurrencyProvider";
+import { data, formatMonth } from "@/lib/dashboard-data";
 
 export const Route = createFileRoute("/net-worth")({
   head: () => ({
@@ -36,12 +39,22 @@ function NetWorthPage() {
 }
 
 function NetWorthBody() {
-  const { slice } = useRange();
+  const { slice, baseline, compare } = useRange();
+  const money = useMoney();
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+
   const series = slice(data.series);
   const last = series[series.length - 1];
   const first = series[0];
-  const totalGrowth = last.netWorth - first.netWorth;
-  const totalGrowthPct = first.netWorth > 0 ? totalGrowth / first.netWorth : 0;
+  const base = baseline(data.series) ?? first;
+  const totalGrowth = last.netWorth - base.netWorth;
+  const totalGrowthPct = base.netWorth > 0 ? totalGrowth / base.netWorth : 0;
+  const compareLabel =
+    compare === "prev"
+      ? `vs ${formatMonth(base.month)}`
+      : compare === "first"
+        ? `vs inicio ${formatMonth(base.month)}`
+        : `vs YTD ${formatMonth(base.month)}`;
 
   const netTrend = series.map((p) => p.netWorth);
   const assetsTrend = series.map((p) => p.assets);
@@ -53,17 +66,17 @@ function NetWorthBody() {
         <KpiCard
           accent="primary"
           label="Patrimonio neto"
-          value={euro.format(last.netWorth)}
+          value={money.format(last.netWorth)}
           hint={`Cierre ${formatMonth(last.month)}`}
           series={netTrend}
         />
-        <KpiCard label="Activos" value={euro.format(last.assets)} hint="Total bruto del cierre" series={assetsTrend} />
-        <KpiCard label="Pasivos" value={euro.format(last.liabilities)} hint="Préstamos y deudas" series={liabTrend} sparkColor="var(--negative)" />
+        <KpiCard label="Activos" value={money.format(last.assets)} hint="Total bruto del cierre" series={assetsTrend} />
+        <KpiCard label="Pasivos" value={money.format(last.liabilities)} hint="Préstamos y deudas" series={liabTrend} sparkColor="var(--negative)" />
         <KpiCard
-          label="Crecimiento del rango"
-          value={euro1.format(totalGrowth)}
+          label="Crecimiento"
+          value={money.format1(totalGrowth)}
           badge={<DeltaBadge value={totalGrowthPct} asPercent />}
-          hint={`${formatMonth(first.month)} → ${formatMonth(last.month)}`}
+          hint={compareLabel}
           series={netTrend.map((v, i, a) => (i === 0 ? 0 : v - a[i - 1])).slice(1)}
           sparkColor={totalGrowth >= 0 ? "var(--positive)" : "var(--negative)"}
         />
@@ -71,10 +84,10 @@ function NetWorthBody() {
 
       <SectionCard
         title="Evolución del patrimonio neto"
-        description="Patrimonio consolidado mes a mes."
+        description="Patrimonio consolidado mes a mes. Pulsa un mes para ver el detalle."
         askPrompt="Describe la evolución de mi patrimonio neto: meses de mayor crecimiento, retrocesos y ritmo medio."
       >
-        <NetWorthAreaChart series={series} />
+        <NetWorthAreaChart series={series} onSelectMonth={setSelectedMonth} />
       </SectionCard>
 
       <section>
@@ -96,12 +109,16 @@ function NetWorthBody() {
                 const next = arr[i + 1];
                 const delta = next ? p.netWorth - next.netWorth : 0;
                 return (
-                  <tr key={p.month} className="hover:bg-muted/30">
+                  <tr
+                    key={p.month}
+                    onClick={() => setSelectedMonth(p.month)}
+                    className="cursor-pointer transition hover:bg-muted/40"
+                  >
                     <td className="px-4 py-3 font-medium">{formatMonth(p.month)}</td>
-                    <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{euro1.format(p.assets)}</td>
-                    <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{euro1.format(p.liabilities)}</td>
-                    <td className="px-4 py-3 text-right tabular-nums font-medium">{euro1.format(p.netWorth)}</td>
-                    <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{euro1.format(p.savings)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{money.format1(p.assets)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{money.format1(p.liabilities)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums font-medium">{money.format1(p.netWorth)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{money.format1(p.savings)}</td>
                     <td className="px-4 py-3 text-right">
                       {next ? <DeltaBadge value={delta} /> : <span className="text-muted-foreground">—</span>}
                     </td>
@@ -112,6 +129,12 @@ function NetWorthBody() {
           </table>
         </div>
       </section>
+
+      <MonthDetailDrawer
+        month={selectedMonth}
+        open={!!selectedMonth}
+        onOpenChange={(o) => (o ? null : setSelectedMonth(null))}
+      />
     </div>
   );
 }
