@@ -265,7 +265,7 @@ function Markdownish({ text }: { text: string }) {
 
 function inline(s: string) {
   // bold + italic
-  const parts: (string | JSX.Element)[] = [];
+  const parts: ReactNode[] = [];
   const regex = /(\*\*[^*]+\*\*|_[^_]+_)/g;
   let last = 0;
   let m: RegExpExecArray | null;
