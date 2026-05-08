@@ -182,3 +182,58 @@ function ExpensesBody() {
     </div>
   );
 }
+
+import { Sparkline } from "@/components/charts/charts";
+import { EXPENSE_TAGS, tagSeries } from "@/lib/expense-tags";
+import type { ExpenseMonth } from "@/lib/dashboard-data";
+
+function TagTrendGrid({ months }: { months: ExpenseMonth[] }) {
+  const money = useMoney();
+  return (
+    <ul className="grid gap-3 sm:grid-cols-2">
+      {EXPENSE_TAGS.map((t) => {
+        const series = tagSeries(months, t.key);
+        const last = series[series.length - 1] ?? 0;
+        const first = series[0] ?? 0;
+        const delta = first > 0 ? (last - first) / first : 0;
+        return (
+          <li
+            key={t.key}
+            className="rounded-lg border border-border bg-card p-3"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2 text-[12.5px] font-medium text-foreground">
+                <span
+                  aria-hidden
+                  className="h-2 w-2 rounded-full"
+                  style={{ background: t.color }}
+                />
+                {t.label}
+              </span>
+              <span
+                className={
+                  delta > 0
+                    ? "text-[11.5px] font-medium tabular-nums text-negative"
+                    : delta < 0
+                      ? "text-[11.5px] font-medium tabular-nums text-positive"
+                      : "text-[11.5px] font-medium tabular-nums text-muted-foreground"
+                }
+              >
+                {delta === 0
+                  ? "—"
+                  : `${delta > 0 ? "+" : ""}${(delta * 100).toFixed(1)}%`}
+              </span>
+            </div>
+            <div className="mt-1 text-[11px] text-muted-foreground tabular-nums">
+              {money.format1(last)} <span className="text-muted-foreground/70">último mes</span>
+            </div>
+            <div className="mt-2 -mx-1">
+              <Sparkline values={series} color={t.color} />
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
