@@ -87,6 +87,7 @@ function BalancesPage() {
                 key={g.key}
                 title={g.label}
                 description={`${g.rows.length} posiciones · ${euro1.format(g.total)}`}
+                askPrompt={`Resume mis cuentas de tipo "${g.label}": cuáles destacan y si hay algo a vigilar.`}
               >
                 <div className="overflow-hidden rounded-lg border border-border">
                   <table className="w-full text-[13px]">
