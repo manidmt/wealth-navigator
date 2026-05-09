@@ -172,18 +172,11 @@ export function HoldingDrawer({ holding, total, open, onOpenChange }: Props) {
           </button>
           <button
             type="button"
-            onClick={close}
-            className="ml-auto text-[12px] text-muted-foreground hover:text-foreground"
-          >
-            Cerrar
-          </button>
-          <button
-            type="button"
             onClick={() => {
               close();
               navigate({ to: "/assistant", search: { q: askPrompt } });
             }}
-            className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-[12.5px] font-medium text-primary-foreground transition hover:opacity-90"
+            className="ml-auto inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-[12.5px] font-medium text-primary-foreground transition hover:opacity-90"
           >
             <AssistantMark className="h-3.5 w-3.5" />
             Preguntar al asistente
