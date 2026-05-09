@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app/AppShell";
 import { PageHeader, SectionCard } from "@/components/app/SectionCard";
 import { KpiCard } from "@/components/app/KpiCard";
@@ -8,6 +8,15 @@ import { HoldingDrawer } from "@/components/app/HoldingDrawer";
 import { BarList, DonutChart } from "@/components/charts/charts";
 import { useMoney } from "@/components/app/CurrencyProvider";
 import { data, type Holding } from "@/lib/dashboard-data";
+import { freshnessLabel } from "@/lib/holding-details";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { X } from "lucide-react";
 
 export const Route = createFileRoute("/portfolio")({
   head: () => ({
@@ -21,12 +30,12 @@ export const Route = createFileRoute("/portfolio")({
 
 function PortfolioPage() {
   const money = useMoney();
-  const holdings = [...data.portfolio.holdings].sort((a, b) => b.value - a.value);
-  const total = holdings.reduce((a, b) => a + b.value, 0);
+  const allHoldings = [...data.portfolio.holdings].sort((a, b) => b.value - a.value);
+  const total = allHoldings.reduce((a, b) => a + b.value, 0);
   const byPlatform = data.portfolio.byPlatform ?? [];
 
   const byCategoryMap = new Map<string, number>();
-  for (const h of holdings) {
+  for (const h of allHoldings) {
     const k = h.category ?? "Otros";
     byCategoryMap.set(k, (byCategoryMap.get(k) ?? 0) + h.value);
   }
@@ -34,7 +43,27 @@ function PortfolioPage() {
     .map(([label, value]) => ({ label, value }))
     .sort((a, b) => b.value - a.value);
 
+  const categories = useMemo(
+    () => Array.from(new Set(allHoldings.map((h) => h.category ?? "Otros"))).sort(),
+    [allHoldings],
+  );
+  const platforms = useMemo(
+    () => Array.from(new Set(allHoldings.map((h) => h.platform))).sort(),
+    [allHoldings],
+  );
+
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [platformFilter, setPlatformFilter] = useState<string>("all");
+  const filtered = allHoldings.filter(
+    (h) =>
+      (categoryFilter === "all" || (h.category ?? "Otros") === categoryFilter) &&
+      (platformFilter === "all" || h.platform === platformFilter),
+  );
+  const filteredTotal = filtered.reduce((a, b) => a + b.value, 0);
+  const hasFilter = categoryFilter !== "all" || platformFilter !== "all";
+
   const [selected, setSelected] = useState<Holding | null>(null);
+  const freshness = freshnessLabel(data.generatedAt);
 
   return (
     <AppShell pageEyebrow="Cartera invertida">
@@ -45,11 +74,21 @@ function PortfolioPage() {
       />
 
       <div className="space-y-10 px-4 py-8 md:px-8">
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <KpiCard accent="primary" label="Valor de mercado" value={money.format(total)} hint={`${holdings.length} posiciones activas`} />
-          <KpiCard label="Plataformas" value={String(byPlatform.length || new Set(holdings.map((h) => h.platform)).size)} hint="Brokers y wallets agregados" />
-          <KpiCard label="Categorías" value={String(byCategory.length)} hint="Tipos de activo" />
-          <KpiCard label="Mayor posición" value={holdings[0] ? money.format1(holdings[0].value) : "—"} hint={holdings[0]?.label ?? ""} />
+        <section>
+          <KpiCard
+            accent="primary"
+            label="Valor de mercado"
+            value={money.format(total)}
+            hint={
+              <span className="inline-flex items-center gap-2">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inset-0 animate-ping rounded-full bg-primary-foreground/40" />
+                  <span className="relative h-1.5 w-1.5 rounded-full bg-primary-foreground/80" />
+                </span>
+                {freshness} · {allHoldings.length} posiciones · {platforms.length} plataformas
+              </span>
+            }
+          />
         </section>
 
         <section className="grid gap-5 lg:grid-cols-2">
@@ -66,6 +105,61 @@ function PortfolioPage() {
           description="Pulsa una fila para ver el detalle."
           askPrompt="Revisa mis posiciones: cuáles destacan, cuáles deberían reducirse y propuestas de rebalance."
         >
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                Categoría
+              </span>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="h-8 w-[170px] text-[12.5px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  {categories.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                Plataforma
+              </span>
+              <Select value={platformFilter} onValueChange={setPlatformFilter}>
+                <SelectTrigger className="h-8 w-[180px] text-[12.5px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  {platforms.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {hasFilter && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCategoryFilter("all");
+                  setPlatformFilter("all");
+                }}
+                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11.5px] text-muted-foreground transition hover:text-foreground"
+              >
+                <X className="h-3 w-3" /> Limpiar
+              </button>
+            )}
+            <div className="ml-auto text-[12px] tabular-nums text-muted-foreground">
+              {filtered.length} de {allHoldings.length} ·{" "}
+              <span className="text-foreground">{money.format(filteredTotal)}</span>
+            </div>
+          </div>
+
           <div className="overflow-hidden rounded-lg border border-border">
             <table className="w-full text-[13px]">
               <thead className="bg-muted/40">
@@ -78,7 +172,7 @@ function PortfolioPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {holdings.map((h) => {
+                {filtered.map((h) => {
                   const w = total > 0 ? (h.value / total) * 100 : 0;
                   return (
                     <tr
@@ -96,6 +190,13 @@ function PortfolioPage() {
                     </tr>
                   );
                 })}
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-10 text-center text-[12.5px] text-muted-foreground">
+                      No hay posiciones con esos filtros.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
