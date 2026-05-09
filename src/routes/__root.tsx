@@ -9,7 +9,8 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
-import { data } from "@/lib/dashboard-data";
+import { useLiveDashboardData } from "@/lib/dashboard-data";
+import { DashboardContext } from "@/hooks/use-dashboard";
 import { AssistantProvider } from "@/components/assistant/AssistantProvider";
 import { ThemeProvider, themeBootScript } from "@/components/app/ThemeProvider";
 import { CurrencyProvider } from "@/components/app/CurrencyProvider";
@@ -82,7 +83,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "Dashboard personal de patrimonio: resumen, gastos, portfolio, evolución y cierres mensuales.",
       },
-      { name: "author", content: data.owner },
+      { name: "author", content: "Manuel" },
       { property: "og:title", content: "Wealth Studio" },
       {
         property: "og:description",
@@ -124,14 +125,17 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const { data: dashboardData } = useLiveDashboardData();
 
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <CurrencyProvider>
-          <AssistantProvider>
-            <Outlet />
-          </AssistantProvider>
+          <DashboardContext.Provider value={dashboardData}>
+            <AssistantProvider>
+              <Outlet />
+            </AssistantProvider>
+          </DashboardContext.Provider>
         </CurrencyProvider>
       </ThemeProvider>
     </QueryClientProvider>

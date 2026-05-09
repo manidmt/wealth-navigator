@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/app/ThemeToggle";
-import { data, formatMonth } from "@/lib/dashboard-data";
+import { formatMonth } from "@/lib/dashboard-data";
+import { useDashboard } from "@/hooks/use-dashboard";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -26,42 +27,44 @@ const fxRates = [
   { currency: "GBP", rate: 1.17, source: "manual", updated: "2026-04-30" },
 ];
 
-function downloadJSON() {
-  if (typeof window === "undefined") return;
-  const blob = new Blob([JSON.stringify(data, null, 2)], {
-    type: "application/json",
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `wealth-studio-${data.latestMonth}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function downloadCSV() {
-  if (typeof window === "undefined") return;
-  const rows = [
-    ["month", "assets", "liabilities", "netWorth", "savings"],
-    ...data.series.map((p) => [
-      p.month,
-      p.assets,
-      p.liabilities,
-      p.netWorth,
-      p.savings,
-    ]),
-  ];
-  const csv = rows.map((r) => r.join(",")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `wealth-studio-series-${data.latestMonth}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
 function SettingsPage() {
+  const data = useDashboard();
+
+  function downloadJSON() {
+    if (typeof window === "undefined") return;
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `wealth-studio-${data.latestMonth}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function downloadCSV() {
+    if (typeof window === "undefined") return;
+    const rows = [
+      ["month", "assets", "liabilities", "netWorth", "savings"],
+      ...data.series.map((p) => [
+        p.month,
+        p.assets,
+        p.liabilities,
+        p.netWorth,
+        p.savings,
+      ]),
+    ];
+    const csv = rows.map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `wealth-studio-series-${data.latestMonth}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <AppShell pageEyebrow="Preferencias">
       <PageHeader

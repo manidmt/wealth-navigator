@@ -14,7 +14,8 @@ import {
 } from "@/components/charts/charts";
 import { InsightsCard } from "@/components/assistant/InsightsCard";
 import { useMoney } from "@/components/app/CurrencyProvider";
-import { data, formatMonth } from "@/lib/dashboard-data";
+import { formatMonth } from "@/lib/dashboard-data";
+import { useDashboard } from "@/hooks/use-dashboard";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
+  const data = useDashboard();
   return (
     <AppShell pageEyebrow="Resumen ejecutivo">
       <PageHeader
@@ -58,6 +60,7 @@ function HomePage() {
 }
 
 function HomeBody() {
+  const data = useDashboard();
   const { slice, baseline, compare } = useRange();
   const money = useMoney();
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);

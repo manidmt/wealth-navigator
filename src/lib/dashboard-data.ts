@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import rawData from "@/data/dashboard-data.json";
 
 export type Holding = {
@@ -52,6 +53,23 @@ export type DashboardData = {
 };
 
 export const data = rawData as DashboardData;
+
+const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "";
+
+export async function fetchDashboardData(): Promise<DashboardData> {
+  const res = await fetch(`${API_BASE}/api/dashboard-snapshot`);
+  if (!res.ok) throw new Error(`dashboard-snapshot HTTP ${res.status}`);
+  return res.json() as Promise<DashboardData>;
+}
+
+export function useLiveDashboardData() {
+  return useQuery({
+    queryKey: ["dashboard-snapshot"],
+    queryFn: fetchDashboardData,
+    initialData: rawData as DashboardData,
+    staleTime: 60_000,
+  });
+}
 
 export const euro = new Intl.NumberFormat("es-ES", {
   style: "currency",

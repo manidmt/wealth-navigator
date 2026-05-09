@@ -8,7 +8,8 @@ import { NetWorthAreaChart } from "@/components/charts/charts";
 import { RangeProvider, RangeToolbar, useRange } from "@/components/app/RangeToolbar";
 import { MonthDetailDrawer } from "@/components/app/MonthDetailDrawer";
 import { useMoney } from "@/components/app/CurrencyProvider";
-import { data, formatMonth } from "@/lib/dashboard-data";
+import { formatMonth } from "@/lib/dashboard-data";
+import { useDashboard } from "@/hooks/use-dashboard";
 
 export const Route = createFileRoute("/net-worth")({
   head: () => ({
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/net-worth")({
 });
 
 function NetWorthPage() {
+  const data = useDashboard();
   return (
     <AppShell pageEyebrow="Patrimonio">
       <PageHeader
@@ -39,6 +41,7 @@ function NetWorthPage() {
 }
 
 function NetWorthBody() {
+  const data = useDashboard();
   const { slice, baseline, compare } = useRange();
   const money = useMoney();
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);

@@ -7,7 +7,8 @@ import { PlatformBadge } from "@/components/app/PlatformBadge";
 import { HoldingDrawer } from "@/components/app/HoldingDrawer";
 import { BarList, DonutChart } from "@/components/charts/charts";
 import { useMoney } from "@/components/app/CurrencyProvider";
-import { data, type Holding } from "@/lib/dashboard-data";
+import { type Holding } from "@/lib/dashboard-data";
+import { useDashboard } from "@/hooks/use-dashboard";
 import { freshnessLabel } from "@/lib/holding-details";
 import {
   Select,
@@ -29,6 +30,7 @@ export const Route = createFileRoute("/portfolio")({
 });
 
 function PortfolioPage() {
+  const data = useDashboard();
   const money = useMoney();
   const allHoldings = [...data.portfolio.holdings].sort((a, b) => b.value - a.value);
   const total = allHoldings.reduce((a, b) => a + b.value, 0);

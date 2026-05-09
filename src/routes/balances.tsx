@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { PlatformBadge } from "@/components/app/PlatformBadge";
 import { HoldingDrawer } from "@/components/app/HoldingDrawer";
 import { useMoney } from "@/components/app/CurrencyProvider";
-import { data, formatMonth, type Holding } from "@/lib/dashboard-data";
+import { formatMonth, type Holding } from "@/lib/dashboard-data";
+import { useDashboard } from "@/hooks/use-dashboard";
 
 export const Route = createFileRoute("/balances")({
   head: () => ({
@@ -33,6 +34,7 @@ const bucketFor = (label: string, category?: string, value = 0) => {
 };
 
 function BalancesPage() {
+  const data = useDashboard();
   const money = useMoney();
   const accounts = data.holdings.map((h, i) => {
     const b = bucketFor(h.label, h.category, h.value);

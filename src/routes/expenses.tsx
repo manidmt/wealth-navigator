@@ -10,7 +10,8 @@ import { MonthDetailDrawer } from "@/components/app/MonthDetailDrawer";
 import { ExpenseTagsBreakdown } from "@/components/app/ExpenseTagsBreakdown";
 import { useMoney } from "@/components/app/CurrencyProvider";
 import { EXPENSE_TAGS, tagSeries } from "@/lib/expense-tags";
-import { data, formatMonth, type ExpenseMonth } from "@/lib/dashboard-data";
+import { formatMonth, type ExpenseMonth } from "@/lib/dashboard-data";
+import { useDashboard } from "@/hooks/use-dashboard";
 
 export const Route = createFileRoute("/expenses")({
   head: () => ({
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/expenses")({
 });
 
 function ExpensesPage() {
+  const data = useDashboard();
   return (
     <AppShell pageEyebrow="Movimientos">
       <PageHeader
@@ -41,6 +43,7 @@ function ExpensesPage() {
 }
 
 function ExpensesBody() {
+  const data = useDashboard();
   const { slice, baseline, compare } = useRange();
   const money = useMoney();
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
