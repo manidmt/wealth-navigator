@@ -1,4 +1,4 @@
-import { data, type ExpenseMonth } from "@/lib/dashboard-data";
+import { type ExpenseMonth } from "@/lib/dashboard-data";
 
 /**
  * Etiquetas transversales del gasto. A diferencia de las categorías
@@ -47,8 +47,8 @@ export type TagBreakdownItem = {
 };
 
 /** Devuelve la asignación por etiqueta para un mes (ordenada desc). */
-export function tagBreakdown(month: string): TagBreakdownItem[] {
-  const m = data.expenses.byMonth.find((x) => x.month === month);
+export function tagBreakdown(month: string, byMonth: ExpenseMonth[]): TagBreakdownItem[] {
+  const m = byMonth.find((x) => x.month === month);
   if (!m) return [];
   const total = m.expenseTotal;
   const items = EXPENSE_TAGS.map((t) => {

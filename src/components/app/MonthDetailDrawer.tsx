@@ -10,7 +10,8 @@ import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { useMoney } from "@/components/app/CurrencyProvider";
 import { DeltaBadge } from "@/components/app/DeltaBadge";
 import { ExpenseTagsBreakdown } from "@/components/app/ExpenseTagsBreakdown";
-import { data, formatMonth, type SeriesPoint, type ExpenseMonth } from "@/lib/dashboard-data";
+import { formatMonth, type SeriesPoint, type ExpenseMonth } from "@/lib/dashboard-data";
+import { useDashboard } from "@/hooks/use-dashboard";
 
 type Props = {
   /** YYYY-MM identifier or null to render an empty drawer. */
@@ -20,6 +21,7 @@ type Props = {
 };
 
 export function MonthDetailDrawer({ month, open, onOpenChange }: Props) {
+  const data = useDashboard();
   const money = useMoney();
   const navigate = useNavigate();
 

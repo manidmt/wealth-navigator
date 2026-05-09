@@ -21,7 +21,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { BrandMark } from "@/components/app/BrandMark";
-import { data } from "@/lib/dashboard-data";
+import { useDashboard } from "@/hooks/use-dashboard";
 
 type NavItem = {
   title: string;
@@ -41,6 +41,7 @@ const items: NavItem[] = [
 ];
 
 export function AppSidebar() {
+  const data = useDashboard();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (

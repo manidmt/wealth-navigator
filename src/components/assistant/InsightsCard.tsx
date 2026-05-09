@@ -3,6 +3,7 @@ import { useAssistant } from "./AssistantProvider";
 import { useNavigate } from "@tanstack/react-router";
 import { AssistantMark } from "./AssistantMark";
 import { computeInsights, type Insight } from "@/lib/assistant-mock";
+import { useDashboard } from "@/hooks/use-dashboard";
 
 const TONE_DOT: Record<Insight["tone"], string> = {
   positive: "bg-positive",
@@ -11,7 +12,8 @@ const TONE_DOT: Record<Insight["tone"], string> = {
 };
 
 export function InsightsCard() {
-  const insights = computeInsights();
+  const data = useDashboard();
+  const insights = computeInsights(data);
   const assistant = useAssistant();
   const navigate = useNavigate();
 

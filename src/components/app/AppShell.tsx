@@ -1,7 +1,8 @@
 import { type ReactNode } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
-import { data, formatMonth } from "@/lib/dashboard-data";
+import { formatMonth } from "@/lib/dashboard-data";
+import { useDashboard } from "@/hooks/use-dashboard";
 import { useAssistant } from "@/components/assistant/AssistantProvider";
 import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { ThemeToggle } from "@/components/app/ThemeToggle";
@@ -14,6 +15,7 @@ type Props = {
 };
 
 export function AppShell({ children, pageEyebrow }: Props) {
+  const data = useDashboard();
   const assistant = useAssistant();
   return (
     <SidebarProvider>
@@ -49,7 +51,11 @@ export function AppShell({ children, pageEyebrow }: Props) {
               <span className="hidden text-border md:inline">·</span>
               <div className="hidden items-center gap-1.5 sm:flex">
                 <span className="h-1.5 w-1.5 rounded-full bg-positive" />
-                <span>Cierre {formatMonth(data.latestMonth)}</span>
+                <span>
+                {data.currentCalendarMonth > data.latestClosedMonth
+                  ? `En curso · ${formatMonth(data.currentCalendarMonth)}`
+                  : `Cierre ${formatMonth(data.latestClosedMonth)}`}
+              </span>
               </div>
               <span className="hidden text-border md:inline">·</span>
               <CurrencySwitcher />

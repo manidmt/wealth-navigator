@@ -11,6 +11,7 @@ import {
   mockAnswer,
   type Playbook,
 } from "@/lib/assistant-mock";
+import { useDashboard } from "@/hooks/use-dashboard";
 
 const searchSchema = z.object({
   q: z.string().optional(),
@@ -39,6 +40,7 @@ type Msg = {
 };
 
 function AssistantPage() {
+  const data = useDashboard();
   const navigate = useNavigate();
   const { q } = Route.useSearch();
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -76,7 +78,7 @@ function AssistantPage() {
     setInput("");
     setBusy(true);
     try {
-      const reply = await mockAnswer(trimmed);
+      const reply = await mockAnswer(trimmed, data);
       setMessages((m) =>
         m.map((msg) => (msg.id === pendingId ? { ...msg, content: reply, pending: false } : msg)),
       );

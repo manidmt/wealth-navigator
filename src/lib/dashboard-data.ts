@@ -27,6 +27,8 @@ export type ExpenseMonth = {
 export type DashboardData = {
   owner: string;
   generatedAt: string;
+  currentCalendarMonth: string;
+  latestClosedMonth: string;
   latestMonth: string;
   summary: {
     totalAssets: number;
@@ -66,8 +68,8 @@ export function useLiveDashboardData() {
   return useQuery({
     queryKey: ["dashboard-snapshot"],
     queryFn: fetchDashboardData,
-    initialData: rawData as DashboardData,
-    staleTime: 60_000,
+    placeholderData: rawData as DashboardData,
+    staleTime: 30_000,
   });
 }
 

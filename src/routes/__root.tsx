@@ -126,7 +126,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function DashboardDataProvider({ children }: { children: React.ReactNode }) {
   const { data: dashboardData } = useLiveDashboardData();
   return (
-    <DashboardContext.Provider value={dashboardData}>
+    <DashboardContext.Provider value={dashboardData ?? null}>
       {children}
     </DashboardContext.Provider>
   );

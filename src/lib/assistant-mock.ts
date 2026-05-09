@@ -1,4 +1,4 @@
-import { data, euro1, formatMonth, type SeriesPoint } from "./dashboard-data";
+import { euro1, formatMonth, type DashboardData, type SeriesPoint } from "./dashboard-data";
 
 export type Suggestion = {
   id: string;
@@ -94,11 +94,7 @@ export type Insight = {
   prompt: string;
 };
 
-/**
- * Insights deterministas derivados del JSON semilla. Cuando se conecte el
- * backend, sustituir por una llamada al agente que devuelva la misma forma.
- */
-export function computeInsights(): Insight[] {
+export function computeInsights(data: DashboardData): Insight[] {
   const months = data.expenses.byMonth;
   const cur = months[months.length - 1];
   const prev = months[months.length - 2];
@@ -155,10 +151,10 @@ export function computeInsights(): Insight[] {
 
 /* ----------------------------- Mock responder ----------------------------- */
 
-const CANNED: { match: RegExp; reply: (q: string) => string }[] = [
+const CANNED: { match: RegExp; reply: (q: string, data: DashboardData) => string }[] = [
   {
     match: /resumen|cierre|mes/i,
-    reply: () => {
+    reply: (_q: string, data: DashboardData) => {
       const cur = data.expenses.byMonth[data.expenses.byMonth.length - 1];
       return [
         `**Cierre ${formatMonth(data.latestMonth)}**`,
@@ -173,7 +169,7 @@ const CANNED: { match: RegExp; reply: (q: string) => string }[] = [
   },
   {
     match: /gast|categor/i,
-    reply: () => {
+    reply: (_q: string, data: DashboardData) => {
       const top = data.expenses.currentMonthCategories.slice(0, 3);
       return [
         `Top categorías de gasto en ${formatMonth(data.expenses.currentMonth)}:`,
@@ -186,7 +182,7 @@ const CANNED: { match: RegExp; reply: (q: string) => string }[] = [
   },
   {
     match: /portfolio|posici|allocation|plataforma|concentr|diversif/i,
-    reply: () => {
+    reply: (_q: string, data: DashboardData) => {
       const top = [...data.portfolio.byPlatform].sort((a, b) => b.value - a.value).slice(0, 3);
       const total = data.portfolio.byPlatform.reduce((a, b) => a + b.value, 0);
       return [
@@ -200,7 +196,7 @@ const CANNED: { match: RegExp; reply: (q: string) => string }[] = [
   },
   {
     match: /patrimonio|evoluci|crecimiento/i,
-    reply: () => {
+    reply: (_q: string, data: DashboardData) => {
       const s = data.series;
       const first = s[0];
       const last = s[s.length - 1];
@@ -218,7 +214,7 @@ const CANNED: { match: RegExp; reply: (q: string) => string }[] = [
   },
   {
     match: /ahorro|saving/i,
-    reply: () => {
+    reply: (_q: string, data: DashboardData) => {
       const last3 = data.expenses.byMonth.slice(-3);
       const avgIncome =
         last3.reduce((a, b) => a + b.incomeTotal, 0) / Math.max(last3.length, 1);
@@ -235,10 +231,10 @@ const CANNED: { match: RegExp; reply: (q: string) => string }[] = [
   },
 ];
 
-export async function mockAnswer(question: string): Promise<string> {
+export async function mockAnswer(question: string, data: DashboardData): Promise<string> {
   await new Promise((r) => setTimeout(r, 450 + Math.random() * 350));
   const hit = CANNED.find((c) => c.match.test(question));
-  if (hit) return hit.reply(question);
+  if (hit) return hit.reply(question, data);
   return [
     `Aún no tengo una respuesta entrenada para esa pregunta.`,
     ``,

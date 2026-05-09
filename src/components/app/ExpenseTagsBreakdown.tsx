@@ -22,7 +22,7 @@ type Props = {
 
 export function ExpenseTagsBreakdown({ month, rangeMonths, className, compact }: Props) {
   const money = useMoney();
-  const items: TagBreakdownItem[] = tagBreakdown(month);
+  const items: TagBreakdownItem[] = tagBreakdown(month, rangeMonths);
   const [active, setActive] = useState<string>(items[0]?.tag.key ?? "");
 
   if (!items.length) {

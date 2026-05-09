@@ -65,6 +65,8 @@ function BalancesPage() {
     .reduce((acc, g) => acc + g.total, 0);
   const totalLiab = Math.abs(grouped.find((g) => g.key === "liabilities")?.total ?? 0);
 
+  const currentCalMonth = data.currentCalendarMonth;
+
   // Trends from the closure history for the KPI sparklines
   const trail = data.series.slice(-12);
   const assetsTrend = trail.map((p) => p.assets);
@@ -172,7 +174,9 @@ function BalancesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {[...data.series].reverse().map((p, i) => (
+                {[...data.series].reverse().map((p) => {
+                  const isLive = p.month >= currentCalMonth;
+                  return (
                   <tr key={p.month} className="hover:bg-muted/30">
                     <td className="px-4 py-3 font-medium">{formatMonth(p.month)}</td>
                     <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
@@ -190,21 +194,22 @@ function BalancesPage() {
                     <td className="px-4 py-3 text-right">
                       <span
                         className={
-                          i === 0
+                          isLive
                             ? "inline-flex items-center gap-1.5 rounded-full bg-warning/15 px-2 py-0.5 text-[11px] font-medium text-warning ring-1 ring-warning/30"
                             : "inline-flex items-center gap-1.5 rounded-full bg-positive/10 px-2 py-0.5 text-[11px] font-medium text-positive ring-1 ring-positive/30"
                         }
                       >
                         <span
                           className={
-                            i === 0 ? "h-1.5 w-1.5 rounded-full bg-warning" : "h-1.5 w-1.5 rounded-full bg-positive"
+                            isLive ? "h-1.5 w-1.5 rounded-full bg-warning" : "h-1.5 w-1.5 rounded-full bg-positive"
                           }
                         />
-                        {i === 0 ? "Vivo" : "Cerrado"}
+                        {isLive ? "Vivo" : "Cerrado"}
                       </span>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
