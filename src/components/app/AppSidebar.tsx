@@ -45,7 +45,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border px-3 py-4">
+      <SidebarHeader className="border-b border-sidebar-border px-3 py-[10px]">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="grid h-8 w-8 place-items-center rounded-md bg-primary text-primary-foreground">
             <BrandMark className="h-4 w-4" />
