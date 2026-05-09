@@ -123,19 +123,27 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function DashboardDataProvider({ children }: { children: React.ReactNode }) {
+  const { data: dashboardData } = useLiveDashboardData();
+  return (
+    <DashboardContext.Provider value={dashboardData}>
+      {children}
+    </DashboardContext.Provider>
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const { data: dashboardData } = useLiveDashboardData();
 
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <CurrencyProvider>
-          <DashboardContext.Provider value={dashboardData}>
+          <DashboardDataProvider>
             <AssistantProvider>
               <Outlet />
             </AssistantProvider>
-          </DashboardContext.Provider>
+          </DashboardDataProvider>
         </CurrencyProvider>
       </ThemeProvider>
     </QueryClientProvider>
