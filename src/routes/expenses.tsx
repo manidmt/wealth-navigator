@@ -7,6 +7,7 @@ import { DeltaBadge } from "@/components/app/DeltaBadge";
 import { BarList, MonthlyExpensesBars, Sparkline } from "@/components/charts/charts";
 import { RangeProvider, RangeToolbar, useRange } from "@/components/app/RangeToolbar";
 import { MonthDetailDrawer } from "@/components/app/MonthDetailDrawer";
+import { AddMovementSheet } from "@/components/app/AddMovementSheet";
 import { ExpenseTagsBreakdown } from "@/components/app/ExpenseTagsBreakdown";
 import { useMoney } from "@/components/app/CurrencyProvider";
 import { EXPENSE_TAGS, tagSeries } from "@/lib/expense-tags";
@@ -25,12 +26,23 @@ export const Route = createFileRoute("/expenses")({
 
 function ExpensesPage() {
   const data = useDashboard();
+  const [addOpen, setAddOpen] = useState(false);
   return (
     <AppShell pageEyebrow="Movimientos">
       <PageHeader
         eyebrow={formatMonth(data.expenses.currentMonth)}
         title="Gastos mensuales"
         description="Ingresos y gastos del periodo actual con vista histórica configurable."
+        actions={
+          <button
+            type="button"
+            onClick={() => setAddOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-2 text-[13px] font-medium text-foreground/80 transition hover:border-border-strong hover:text-foreground"
+          >
+            <span className="text-[16px] leading-none">+</span>
+            Añadir
+          </button>
+        }
       />
       <RangeProvider defaultRange="12M">
         <div className="px-4 md:px-8">
@@ -38,6 +50,11 @@ function ExpensesPage() {
         </div>
         <ExpensesBody />
       </RangeProvider>
+      <AddMovementSheet
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        defaultMonth={data.expenses.currentMonth}
+      />
     </AppShell>
   );
 }
