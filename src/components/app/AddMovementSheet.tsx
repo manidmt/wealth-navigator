@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -20,12 +20,17 @@ import {
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
   useCreateMovement,
+  useUpdateMovement,
+  type MovementRecord,
   type MovementType,
 } from "@/lib/movements-api";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** If provided, the sheet operates in edit mode. */
+  movement?: MovementRecord;
+  /** Used as default date prefix when creating (YYYY-MM). */
   defaultMonth?: string;
 };
 
@@ -33,20 +38,48 @@ function todayStr() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function AddMovementSheet({ open, onOpenChange, defaultMonth }: Props) {
-  const defaultDate = defaultMonth
-    ? `${defaultMonth}-01`
-    : todayStr();
+function categoryOptions(type: MovementType, existing?: string) {
+  const base = type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
+  if (existing && !base.includes(existing)) return [existing, ...base];
+  return base;
+}
+
+export function AddMovementSheet({ open, onOpenChange, movement, defaultMonth }: Props) {
+  const isEdit = !!movement;
 
   const [type, setType] = useState<MovementType>("expense");
-  const [date, setDate] = useState(defaultMonth ? `${defaultMonth}-${todayStr().slice(8)}` : todayStr());
+  const [date, setDate] = useState(todayStr());
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
 
   const createMovement = useCreateMovement();
+  const updateMovement = useUpdateMovement();
+  const isPending = createMovement.isPending || updateMovement.isPending;
 
-  const categories = type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
+  // Sync form state when movement or open changes
+  useEffect(() => {
+    if (!open) return;
+    if (movement) {
+      setType(movement.type);
+      setDate(movement.date);
+      setCategory(movement.category);
+      setDescription(movement.description ?? "");
+      setAmount(String(movement.amount));
+    } else {
+      setType("expense");
+      setDate(
+        defaultMonth
+          ? `${defaultMonth}-${todayStr().slice(8)}`
+          : todayStr(),
+      );
+      setCategory("");
+      setDescription("");
+      setAmount("");
+    }
+  }, [open, movement, defaultMonth]);
+
+  const categories = categoryOptions(type, isEdit ? movement?.category : undefined);
 
   function reset() {
     setType("expense");
@@ -61,31 +94,54 @@ export function AddMovementSheet({ open, onOpenChange, defaultMonth }: Props) {
     const parsed = parseFloat(amount.replace(",", "."));
     if (!date || !category || isNaN(parsed) || parsed <= 0) return;
 
-    await createMovement.mutateAsync({
-      type,
-      date,
-      category,
-      description: description.trim() || undefined,
-      amount: parsed,
-      currency: "EUR",
-    });
+    if (isEdit && movement) {
+      await updateMovement.mutateAsync({
+        id: movement.id,
+        month: movement.month,
+        type,
+        date,
+        category,
+        description: description.trim() || undefined,
+        amount: parsed,
+        currency: movement.currency || "EUR",
+      });
+    } else {
+      await createMovement.mutateAsync({
+        type,
+        date,
+        category,
+        description: description.trim() || undefined,
+        amount: parsed,
+        currency: "EUR",
+      });
+    }
 
-    reset();
+    if (!isEdit) reset();
     onOpenChange(false);
   }
 
+  const title = isEdit
+    ? `Editar ${type === "expense" ? "gasto" : "ingreso"}`
+    : `Añadir ${type === "expense" ? "gasto" : "ingreso"}`;
+
   return (
-    <Sheet open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
+    <Sheet
+      open={open}
+      onOpenChange={(o) => {
+        if (!o && !isEdit) reset();
+        onOpenChange(o);
+      }}
+    >
       <SheetContent className="w-full sm:max-w-md">
         <SheetHeader className="gap-1">
           <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-            Nuevo movimiento
+            {isEdit ? "Editar movimiento" : "Nuevo movimiento"}
           </div>
           <SheetTitle className="font-display text-2xl tracking-tight">
-            Añadir {type === "expense" ? "gasto" : "ingreso"}
+            {title}
           </SheetTitle>
           <SheetDescription className="sr-only">
-            Formulario para añadir un gasto o ingreso
+            {isEdit ? "Formulario para editar un movimiento" : "Formulario para añadir un gasto o ingreso"}
           </SheetDescription>
         </SheetHeader>
 
@@ -96,7 +152,12 @@ export function AddMovementSheet({ open, onOpenChange, defaultMonth }: Props) {
               <button
                 key={t}
                 type="button"
-                onClick={() => { setType(t); setCategory(""); }}
+                onClick={() => {
+                  setType(t);
+                  // Keep category only if it exists in the new type's list
+                  const next = categoryOptions(t, undefined);
+                  if (!next.includes(category)) setCategory("");
+                }}
                 className={`flex-1 rounded-md py-1.5 text-[13px] font-medium transition ${
                   type === t
                     ? "bg-background text-foreground shadow-sm"
@@ -109,7 +170,9 @@ export function AddMovementSheet({ open, onOpenChange, defaultMonth }: Props) {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="mov-date" className="text-[12px]">Fecha</Label>
+            <Label htmlFor="mov-date" className="text-[12px]">
+              Fecha
+            </Label>
             <Input
               id="mov-date"
               type="date"
@@ -121,8 +184,10 @@ export function AddMovementSheet({ open, onOpenChange, defaultMonth }: Props) {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="mov-cat" className="text-[12px]">Categoría</Label>
-            <Select value={category} onValueChange={setCategory} required>
+            <Label htmlFor="mov-cat" className="text-[12px]">
+              Categoría
+            </Label>
+            <Select value={category} onValueChange={setCategory}>
               <SelectTrigger id="mov-cat" className="text-[13px]">
                 <SelectValue placeholder="Selecciona una categoría…" />
               </SelectTrigger>
@@ -138,7 +203,8 @@ export function AddMovementSheet({ open, onOpenChange, defaultMonth }: Props) {
 
           <div className="space-y-1.5">
             <Label htmlFor="mov-desc" className="text-[12px]">
-              Descripción <span className="text-muted-foreground">(opcional)</span>
+              Descripción{" "}
+              <span className="text-muted-foreground">(opcional)</span>
             </Label>
             <Input
               id="mov-desc"
@@ -151,7 +217,9 @@ export function AddMovementSheet({ open, onOpenChange, defaultMonth }: Props) {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="mov-amount" className="text-[12px]">Importe (EUR)</Label>
+            <Label htmlFor="mov-amount" className="text-[12px]">
+              Importe (EUR)
+            </Label>
             <div className="relative">
               <Input
                 id="mov-amount"
@@ -173,21 +241,28 @@ export function AddMovementSheet({ open, onOpenChange, defaultMonth }: Props) {
           <div className="flex items-center justify-between gap-3 pt-2">
             <button
               type="button"
-              onClick={() => { reset(); onOpenChange(false); }}
+              onClick={() => {
+                if (!isEdit) reset();
+                onOpenChange(false);
+              }}
               className="text-[13px] text-muted-foreground hover:text-foreground"
             >
               Cancelar
             </button>
             <Button
               type="submit"
-              disabled={createMovement.isPending || !category || !amount}
+              disabled={isPending || !category || !amount}
               className="min-w-[100px]"
             >
-              {createMovement.isPending ? "Guardando…" : "Guardar"}
+              {isPending
+                ? "Guardando…"
+                : isEdit
+                  ? "Guardar cambios"
+                  : "Guardar"}
             </Button>
           </div>
 
-          {createMovement.isError && (
+          {(createMovement.isError || updateMovement.isError) && (
             <p className="text-[12px] text-destructive">
               Error al guardar. Inténtalo de nuevo.
             </p>

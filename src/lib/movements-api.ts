@@ -78,6 +78,26 @@ export function useCreateMovement() {
   });
 }
 
+export function useUpdateMovement() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      month,
+      ...patch
+    }: { id: string; month: string } & Partial<CreateMovementInput>) =>
+      apiFetch(`/api/expenses/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      }),
+    onSuccess: (_data, { month }) => {
+      qc.invalidateQueries({ queryKey: ["month-movements", month] });
+      qc.invalidateQueries({ queryKey: ["dashboard-snapshot"] });
+    },
+  });
+}
+
 export function useDeleteMovement() {
   const qc = useQueryClient();
   return useMutation({
