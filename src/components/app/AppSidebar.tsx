@@ -7,6 +7,7 @@ import {
   Wallet,
   Settings,
   MessageSquareText,
+  LogOut,
 } from "lucide-react";
 import {
   Sidebar,
@@ -22,6 +23,7 @@ import {
 } from "@/components/ui/sidebar";
 import { BrandMark } from "@/components/app/BrandMark";
 import { useDashboard } from "@/hooks/use-dashboard";
+import { useAuth } from "@/hooks/use-auth";
 
 type NavItem = {
   title: string;
@@ -42,6 +44,7 @@ const items: NavItem[] = [
 
 export function AppSidebar() {
   const data = useDashboard();
+  const { user, signOut } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
