@@ -10,7 +10,7 @@ import {
 
 import { useEffect } from "react";
 import appCss from "../styles.css?url";
-import { useLiveDashboardData } from "@/lib/dashboard-data";
+import { useLiveDashboardData, data as seedDashboardData } from "@/lib/dashboard-data";
 import { DashboardContext } from "@/hooks/use-dashboard";
 import { AssistantProvider } from "@/components/assistant/AssistantProvider";
 import { ThemeProvider, themeBootScript } from "@/components/app/ThemeProvider";
@@ -130,7 +130,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function DashboardDataProvider({ children }: { children: React.ReactNode }) {
   const { data: dashboardData } = useLiveDashboardData();
   return (
-    <DashboardContext.Provider value={dashboardData ?? null}>
+    <DashboardContext.Provider value={dashboardData ?? seedDashboardData}>
       {children}
     </DashboardContext.Provider>
   );
