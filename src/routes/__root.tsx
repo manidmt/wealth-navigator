@@ -8,12 +8,16 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 
+import { useEffect } from "react";
 import appCss from "../styles.css?url";
 import { useLiveDashboardData } from "@/lib/dashboard-data";
 import { DashboardContext } from "@/hooks/use-dashboard";
 import { AssistantProvider } from "@/components/assistant/AssistantProvider";
 import { ThemeProvider, themeBootScript } from "@/components/app/ThemeProvider";
 import { CurrencyProvider } from "@/components/app/CurrencyProvider";
+import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { useRouterState } from "@tanstack/react-router";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -132,6 +136,49 @@ function DashboardDataProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const { session, loading } = useAuth();
+  const router = useRouter();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isLoginRoute = pathname === "/login";
+
+  useEffect(() => {
+    if (!loading && !session && !isLoginRoute) {
+      router.navigate({ to: "/login" });
+    }
+  }, [loading, session, isLoginRoute, router]);
+
+  if (isLoginRoute) return <>{children}</>;
+  if (loading || !session) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-[12px] uppercase tracking-[0.16em] text-muted-foreground">
+          Cargando…
+        </div>
+      </div>
+    );
+  }
+  return <>{children}</>;
+}
+
+function AuthenticatedShell({ children }: { children: React.ReactNode }) {
+  return (
+    <DashboardDataProvider>
+      <AssistantProvider>{children}</AssistantProvider>
+    </DashboardDataProvider>
+  );
+}
+
+function GatedOutlet() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  if (pathname === "/login") return <Outlet />;
+  return (
+    <AuthenticatedShell>
+      <Outlet />
+    </AuthenticatedShell>
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
@@ -139,11 +186,12 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <CurrencyProvider>
-          <DashboardDataProvider>
-            <AssistantProvider>
-              <Outlet />
-            </AssistantProvider>
-          </DashboardDataProvider>
+          <AuthProvider>
+            <AuthGate>
+              <GatedOutlet />
+            </AuthGate>
+            <Toaster />
+          </AuthProvider>
         </CurrencyProvider>
       </ThemeProvider>
     </QueryClientProvider>
