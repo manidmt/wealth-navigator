@@ -48,7 +48,11 @@ export function AgentChatWidget() {
   function send() {
     const text = input.trim();
     if (!text || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-    wsRef.current.send(text);
+    const history = messages.map((m) => ({
+      role: m.role === "user" ? "user" : "assistant",
+      content: m.content,
+    }));
+    wsRef.current.send(JSON.stringify({ message: text, history }));
     setMessages((m) => [...m, { role: "user", content: text, id: crypto.randomUUID() }]);
     setInput("");
   }
