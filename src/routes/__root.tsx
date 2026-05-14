@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { useLiveDashboardData, data as seedDashboardData } from "@/lib/dashboard-data";
 import { DashboardContext } from "@/hooks/use-dashboard";
 import { AssistantProvider } from "@/components/assistant/AssistantProvider";
+import { AgentChatWidget } from "@/components/agent/AgentChatWidget";
 import { ThemeProvider, themeBootScript } from "@/components/app/ThemeProvider";
 import { CurrencyProvider } from "@/components/app/CurrencyProvider";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
