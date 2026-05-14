@@ -24,15 +24,44 @@ export function AgentChatWidget() {
     ws.onopen = () => setConnected(true);
     ws.onclose = () => setConnected(false);
     ws.onerror = () => setConnected(false);
+    let streamingId: string | null = null;
     ws.onmessage = (ev) => {
-      let content = ev.data as string;
+      let parsed: any = null;
       try {
-        const parsed = JSON.parse(ev.data);
-        content = parsed.message ?? parsed.content ?? parsed.text ?? ev.data;
+        parsed = JSON.parse(ev.data);
       } catch {
-        // plain text
+        // plain text fallback
+        setMessages((m) => [
+          ...m,
+          { role: "system", content: ev.data as string, id: crypto.randomUUID() },
+        ]);
+        return;
       }
-      setMessages((m) => [...m, { role: "system", content, id: crypto.randomUUID() }]);
+
+      if (typeof parsed?.token === "string") {
+        const token = parsed.token;
+        if (!streamingId) {
+          const id = crypto.randomUUID();
+          streamingId = id;
+          setMessages((m) => [...m, { role: "system", content: token, id }]);
+        } else {
+          const id = streamingId;
+          setMessages((m) =>
+            m.map((msg) => (msg.id === id ? { ...msg, content: msg.content + token } : msg)),
+          );
+        }
+        return;
+      }
+
+      if (parsed?.done) {
+        streamingId = null;
+        return;
+      }
+
+      const content = parsed.message ?? parsed.content ?? parsed.text;
+      if (typeof content === "string") {
+        setMessages((m) => [...m, { role: "system", content, id: crypto.randomUUID() }]);
+      }
     };
 
     return () => {
