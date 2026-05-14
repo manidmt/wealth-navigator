@@ -165,7 +165,10 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 function AuthenticatedShell({ children }: { children: React.ReactNode }) {
   return (
     <DashboardDataProvider>
-      <AssistantProvider>{children}</AssistantProvider>
+      <AssistantProvider>
+        {children}
+        <AgentChatWidget />
+      </AssistantProvider>
     </DashboardDataProvider>
   );
 }
