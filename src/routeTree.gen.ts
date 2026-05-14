@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PortfolioRouteImport } from './routes/portfolio'
 import { Route as NetWorthRouteImport } from './routes/net-worth'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as ExpensesRouteImport } from './routes/expenses'
 import { Route as BalancesRouteImport } from './routes/balances'
 import { Route as AssistantRouteImport } from './routes/assistant'
@@ -30,6 +31,11 @@ const PortfolioRoute = PortfolioRouteImport.update({
 const NetWorthRoute = NetWorthRouteImport.update({
   id: '/net-worth',
   path: '/net-worth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExpensesRoute = ExpensesRouteImport.update({
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/assistant': typeof AssistantRoute
   '/balances': typeof BalancesRoute
   '/expenses': typeof ExpensesRoute
+  '/login': typeof LoginRoute
   '/net-worth': typeof NetWorthRoute
   '/portfolio': typeof PortfolioRoute
   '/settings': typeof SettingsRoute
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/assistant': typeof AssistantRoute
   '/balances': typeof BalancesRoute
   '/expenses': typeof ExpensesRoute
+  '/login': typeof LoginRoute
   '/net-worth': typeof NetWorthRoute
   '/portfolio': typeof PortfolioRoute
   '/settings': typeof SettingsRoute
@@ -77,6 +85,7 @@ export interface FileRoutesById {
   '/assistant': typeof AssistantRoute
   '/balances': typeof BalancesRoute
   '/expenses': typeof ExpensesRoute
+  '/login': typeof LoginRoute
   '/net-worth': typeof NetWorthRoute
   '/portfolio': typeof PortfolioRoute
   '/settings': typeof SettingsRoute
@@ -88,6 +97,7 @@ export interface FileRouteTypes {
     | '/assistant'
     | '/balances'
     | '/expenses'
+    | '/login'
     | '/net-worth'
     | '/portfolio'
     | '/settings'
@@ -97,6 +107,7 @@ export interface FileRouteTypes {
     | '/assistant'
     | '/balances'
     | '/expenses'
+    | '/login'
     | '/net-worth'
     | '/portfolio'
     | '/settings'
@@ -106,6 +117,7 @@ export interface FileRouteTypes {
     | '/assistant'
     | '/balances'
     | '/expenses'
+    | '/login'
     | '/net-worth'
     | '/portfolio'
     | '/settings'
@@ -116,6 +128,7 @@ export interface RootRouteChildren {
   AssistantRoute: typeof AssistantRoute
   BalancesRoute: typeof BalancesRoute
   ExpensesRoute: typeof ExpensesRoute
+  LoginRoute: typeof LoginRoute
   NetWorthRoute: typeof NetWorthRoute
   PortfolioRoute: typeof PortfolioRoute
   SettingsRoute: typeof SettingsRoute
@@ -142,6 +155,13 @@ declare module '@tanstack/react-router' {
       path: '/net-worth'
       fullPath: '/net-worth'
       preLoaderRoute: typeof NetWorthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/expenses': {
@@ -180,6 +200,7 @@ const rootRouteChildren: RootRouteChildren = {
   AssistantRoute: AssistantRoute,
   BalancesRoute: BalancesRoute,
   ExpensesRoute: ExpensesRoute,
+  LoginRoute: LoginRoute,
   NetWorthRoute: NetWorthRoute,
   PortfolioRoute: PortfolioRoute,
   SettingsRoute: SettingsRoute,
@@ -187,13 +208,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
