@@ -14,6 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
+      movements: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          currency: string
+          date: string
+          description: string | null
+          id: string
+          type: Database["public"]["Enums"]["movement_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          currency?: string
+          date: string
+          description?: string | null
+          id?: string
+          type: Database["public"]["Enums"]["movement_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          currency?: string
+          date?: string
+          description?: string | null
+          id?: string
+          type?: Database["public"]["Enums"]["movement_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      portfolio_positions: {
+        Row: {
+          asset_name: string
+          asset_type: Database["public"]["Enums"]["asset_type"]
+          avg_cost: number
+          created_at: string
+          currency: string
+          current_price: number
+          id: string
+          isin: string | null
+          notes: string | null
+          platform: string | null
+          quantity: number
+          ticker: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          asset_name: string
+          asset_type: Database["public"]["Enums"]["asset_type"]
+          avg_cost: number
+          created_at?: string
+          currency?: string
+          current_price: number
+          id?: string
+          isin?: string | null
+          notes?: string | null
+          platform?: string | null
+          quantity: number
+          ticker?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          asset_name?: string
+          asset_type?: Database["public"]["Enums"]["asset_type"]
+          avg_cost?: number
+          created_at?: string
+          currency?: string
+          current_price?: number
+          id?: string
+          isin?: string | null
+          notes?: string | null
+          platform?: string | null
+          quantity?: number
+          ticker?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -74,6 +164,15 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      asset_type:
+        | "etf"
+        | "stock"
+        | "crypto"
+        | "fund"
+        | "bond"
+        | "broker_cash"
+        | "other"
+      movement_type: "income" | "expense"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -202,6 +301,16 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      asset_type: [
+        "etf",
+        "stock",
+        "crypto",
+        "fund",
+        "bond",
+        "broker_cash",
+        "other",
+      ],
+      movement_type: ["income", "expense"],
     },
   },
 } as const
