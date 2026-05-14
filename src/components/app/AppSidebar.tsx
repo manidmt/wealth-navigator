@@ -98,10 +98,31 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border px-3 py-3 group-data-[collapsible=icon]:hidden">
-        <div className="rounded-md bg-accent/60 px-3 py-2.5 text-[11px] leading-snug text-muted-foreground">
-          <div className="font-medium text-foreground">Modo demo</div>
-          Lectura sobre datos semilla. Edición deshabilitada.
-        </div>
+        {user ? (
+          <div className="flex items-center justify-between gap-2 rounded-md bg-accent/60 px-3 py-2">
+            <div className="min-w-0">
+              <div className="truncate text-[12px] font-medium text-foreground">
+                {user.email}
+              </div>
+              <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                Sesión activa
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => signOut()}
+              title="Cerrar sesión"
+              className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-muted-foreground transition hover:bg-background hover:text-foreground"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ) : (
+          <div className="rounded-md bg-accent/60 px-3 py-2.5 text-[11px] leading-snug text-muted-foreground">
+            <div className="font-medium text-foreground">Modo demo</div>
+            Lectura sobre datos semilla.
+          </div>
+        )}
       </SidebarFooter>
     </Sidebar>
   );
