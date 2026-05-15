@@ -142,20 +142,33 @@ function computeDashboard(movements: any[], positions: any[], snapshots: any[]):
     });
   }
 
-  // Build series: prefer snapshot data, fall back to cumulative savings estimate
-  const allMonths = [...new Set([...snapshotMap.keys(), ...months])].sort();
-  let cumSavings = 0;
-  const series: SeriesPoint[] = allMonths.map((month) => {
-    const snap = snapshotMap.get(month);
-    const movEntry = byMonthMap.get(month);
-    const movNet = movEntry ? movEntry.income - movEntry.expense : 0;
-    if (movEntry) cumSavings += movNet;
-    const savings = movNet;
-    if (snap) {
-      return { month, assets: snap.assets, liabilities: snap.liabilities, netWorth: snap.netWorth, savings };
-    }
-    return { month, assets: totalPortfolio + Math.max(0, cumSavings), liabilities: 0, netWorth: totalPortfolio + cumSavings, savings };
-  });
+  // Build series:
+  // - If snapshots exist: use only snapshot months (real closed data). Movement-only months
+  //   (open/in-progress) are excluded to avoid showing inaccurate estimates as current net worth.
+  // - If no snapshots: fall back to cumulative savings from movements as an approximation.
+  let series: SeriesPoint[];
+  if (snapshots.length > 0) {
+    series = (snapshots as Record<string, unknown>[]).map((s) => {
+      const month = s.month as string;
+      const movEntry = byMonthMap.get(month);
+      const savings = movEntry ? movEntry.income - movEntry.expense : Number(s.savings ?? 0);
+      return {
+        month,
+        assets: Number(s.assets),
+        liabilities: Number(s.liabilities),
+        netWorth: Number(s.net_worth),
+        savings,
+      };
+    });
+  } else {
+    let cumSavings = 0;
+    series = months.map((month) => {
+      const movEntry = byMonthMap.get(month)!;
+      const movNet = movEntry.income - movEntry.expense;
+      cumSavings += movNet;
+      return { month, assets: totalPortfolio + Math.max(0, cumSavings), liabilities: 0, netWorth: totalPortfolio + cumSavings, savings: movNet };
+    });
+  }
 
   const latestSnap = snapshots.length > 0 ? snapshots[snapshots.length - 1] : null;
   const latestNetWorth = latestSnap ? Number(latestSnap.net_worth) : totalPortfolio;
