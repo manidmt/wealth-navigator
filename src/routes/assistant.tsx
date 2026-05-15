@@ -5,13 +5,11 @@ import { z } from "zod";
 import { AppShell } from "@/components/app/AppShell";
 import { PageHeader } from "@/components/app/SectionCard";
 import { AssistantMark } from "@/components/assistant/AssistantMark";
-import {
-  PLAYBOOKS,
-  SUGGESTIONS,
-  mockAnswer,
-  type Playbook,
-} from "@/lib/assistant-mock";
-import { useDashboard } from "@/hooks/use-dashboard";
+import { PLAYBOOKS, SUGGESTIONS, type Playbook } from "@/lib/assistant-mock";
+import { useAuth } from "@/hooks/use-auth";
+
+const WS_BASE_URL =
+  (import.meta.env.VITE_AGENT_WS_URL as string | undefined) ?? "ws://localhost:8000";
 
 const searchSchema = z.object({
   q: z.string().optional(),
@@ -40,14 +38,60 @@ type Msg = {
 };
 
 function AssistantPage() {
-  const data = useDashboard();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { q } = Route.useSearch();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [connected, setConnected] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const streamingIdRef = useRef<string | null>(null);
+
+  // WebSocket connection
+  useEffect(() => {
+    if (!user?.id) return;
+    const ws = new WebSocket(`${WS_BASE_URL}/ws/${user.id}`);
+    wsRef.current = ws;
+
+    ws.onopen = () => setConnected(true);
+    ws.onclose = () => { setConnected(false); setBusy(false); };
+    ws.onerror = () => { setConnected(false); setBusy(false); };
+
+    ws.onmessage = (ev) => {
+      let parsed: Record<string, unknown> | null = null;
+      try { parsed = JSON.parse(ev.data); } catch { return; }
+
+      if (typeof parsed?.token === "string") {
+        const token = parsed.token as string;
+        if (!streamingIdRef.current) {
+          const id = crypto.randomUUID();
+          streamingIdRef.current = id;
+          setMessages((m) => m.map((msg) => msg.pending ? { ...msg, id, content: token, pending: false } : msg));
+        } else {
+          const id = streamingIdRef.current;
+          setMessages((m) => m.map((msg) => msg.id === id ? { ...msg, content: msg.content + token } : msg));
+        }
+        return;
+      }
+
+      if (parsed?.done) {
+        streamingIdRef.current = null;
+        setBusy(false);
+        return;
+      }
+
+      if (parsed?.error) {
+        setMessages((m) => m.map((msg) => msg.pending ? { ...msg, content: String(parsed!.error), pending: false } : msg));
+        streamingIdRef.current = null;
+        setBusy(false);
+      }
+    };
+
+    return () => { ws.close(); wsRef.current = null; };
+  }, [user?.id]);
 
   // Auto-focus
   useEffect(() => {
@@ -63,28 +107,22 @@ function AssistantPage() {
   useEffect(() => {
     if (q && messages.length === 0) {
       void send(q);
-      // limpia el query string
       navigate({ to: "/assistant", search: {}, replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
 
-  async function send(text: string) {
+  function send(text: string) {
     const trimmed = text.trim();
-    if (!trimmed || busy) return;
+    if (!trimmed || busy || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
     const userMsg: Msg = { id: crypto.randomUUID(), role: "user", content: trimmed };
     const pendingId = crypto.randomUUID();
     setMessages((m) => [...m, userMsg, { id: pendingId, role: "assistant", content: "", pending: true }]);
     setInput("");
     setBusy(true);
-    try {
-      const reply = await mockAnswer(trimmed, data);
-      setMessages((m) =>
-        m.map((msg) => (msg.id === pendingId ? { ...msg, content: reply, pending: false } : msg)),
-      );
-    } finally {
-      setBusy(false);
-    }
+    streamingIdRef.current = pendingId;
+    const history = messages.map((m) => ({ role: m.role === "user" ? "user" : "assistant", content: m.content }));
+    wsRef.current.send(JSON.stringify({ message: trimmed, history }));
   }
 
   function runPlaybook(p: Playbook) {
@@ -153,8 +191,9 @@ function AssistantPage() {
           <Composer
             value={input}
             onChange={setInput}
-            onSubmit={() => void send(input)}
+            onSubmit={() => send(input)}
             busy={busy}
+            connected={connected}
             inputRef={inputRef}
           />
         </div>
@@ -181,9 +220,9 @@ function AssistantPage() {
             </button>
           ))}
 
-          <div className="rounded-lg border border-dashed border-border bg-muted/20 p-3 text-[11px] leading-relaxed text-muted-foreground">
-            Modo demo: las respuestas son simuladas. Conecta el backend con
-            Lovable AI Gateway para activar el agente real.
+          <div className={`rounded-lg border border-dashed p-3 text-[11px] leading-relaxed ${connected ? "border-emerald-500/40 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400" : "border-border bg-muted/20 text-muted-foreground"}`}>
+            <span className={`mr-1.5 inline-block h-1.5 w-1.5 rounded-full ${connected ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
+            {connected ? "Agente conectado — respuestas reales con acceso a tus datos." : "Agente desconectado. Asegúrate de que el servidor está activo."}
           </div>
         </aside>
       </div>
@@ -291,12 +330,14 @@ function Composer({
   onChange,
   onSubmit,
   busy,
+  connected,
   inputRef,
 }: {
   value: string;
   onChange: (v: string) => void;
   onSubmit: () => void;
   busy: boolean;
+  connected: boolean;
   inputRef: RefObject<HTMLTextAreaElement | null>;
 }) {
   return (
@@ -318,13 +359,14 @@ function Composer({
               onSubmit();
             }
           }}
-          placeholder="Escribe tu pregunta…  (Enter para enviar, Shift+Enter salto de línea)"
-          className="max-h-[180px] flex-1 resize-none bg-transparent py-1.5 text-[13.5px] outline-none placeholder:text-muted-foreground"
+          placeholder={connected ? "Escribe tu pregunta…  (Enter para enviar)" : "Conectando con el agente…"}
+          disabled={!connected}
+          className="max-h-[180px] flex-1 resize-none bg-transparent py-1.5 text-[13.5px] outline-none placeholder:text-muted-foreground disabled:opacity-50"
         />
         <button
           type="button"
           onClick={onSubmit}
-          disabled={!value.trim() || busy}
+          disabled={!value.trim() || busy || !connected}
           className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
           aria-label={busy ? "Procesando" : "Enviar"}
         >
