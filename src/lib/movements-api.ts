@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-
-const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 
 export type MovementType = "expense" | "income";
 
@@ -10,11 +10,9 @@ export type MovementRecord = {
   date: string;
   month: string;
   category: string;
-  account: string;
   description: string;
   amount: number;
   currency: string;
-  source: string;
 };
 
 export type CreateMovementInput = {
@@ -22,7 +20,6 @@ export type CreateMovementInput = {
   date: string;
   category: string;
   description?: string;
-  account?: string;
   amount: number;
   currency?: string;
 };
@@ -40,37 +37,63 @@ export const INCOME_CATEGORIES = [
   "Ticket restaurante", "Comer fuera", "Otros ingresos",
 ];
 
-async function apiFetch(path: string, init?: RequestInit) {
-  const res = await fetch(`${API_BASE}${path}`, init);
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`${res.status} ${text}`);
-  }
-  if (res.status === 204) return null;
-  return res.json();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function rowToRecord(row: any): MovementRecord {
+  const date = row.date as string;
+  return {
+    id: row.id,
+    type: row.type as MovementType,
+    date,
+    month: date.slice(0, 7),
+    category: row.category,
+    description: row.description ?? "",
+    amount: Number(row.amount),
+    currency: row.currency ?? "EUR",
+  };
 }
 
 export function useMonthMovements(month: string | null) {
+  const { user } = useAuth();
   return useQuery<MovementRecord[]>({
-    queryKey: ["month-movements", month],
+    queryKey: ["month-movements", month, user?.id],
     queryFn: async () => {
-      const data = await apiFetch(`/api/expenses?month=${month}`);
-      return (data.rows ?? []) as MovementRecord[];
+      if (!month) return [];
+      const { data, error } = await supabase
+        .from("movements")
+        .select("id, type, date, category, description, amount, currency")
+        .gte("date", `${month}-01`)
+        .lte("date", `${month}-31`)
+        .order("date", { ascending: false });
+      if (error) throw error;
+      return (data ?? []).map(rowToRecord);
     },
-    enabled: !!month,
+    enabled: !!month && !!user,
     staleTime: 15_000,
   });
 }
 
 export function useCreateMovement() {
   const qc = useQueryClient();
+  const { user } = useAuth();
   return useMutation({
-    mutationFn: (input: CreateMovementInput) =>
-      apiFetch("/api/expenses", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-      }),
+    mutationFn: async (input: CreateMovementInput) => {
+      if (!user) throw new Error("No autenticado");
+      const { data, error } = await supabase
+        .from("movements")
+        .insert({
+          user_id: user.id,
+          type: input.type,
+          date: input.date,
+          category: input.category,
+          description: input.description ?? null,
+          amount: input.amount,
+          currency: input.currency ?? "EUR",
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
     onSuccess: (_data, input) => {
       qc.invalidateQueries({ queryKey: ["month-movements", input.date.slice(0, 7)] });
       qc.invalidateQueries({ queryKey: ["dashboard-snapshot"] });
@@ -81,16 +104,27 @@ export function useCreateMovement() {
 export function useUpdateMovement() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       id,
-      month,
+      month: _month,
       ...patch
-    }: { id: string; month: string } & Partial<CreateMovementInput>) =>
-      apiFetch(`/api/expenses/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(patch),
-      }),
+    }: { id: string; month: string } & Partial<CreateMovementInput>) => {
+      const { data, error } = await supabase
+        .from("movements")
+        .update({
+          ...(patch.type !== undefined && { type: patch.type }),
+          ...(patch.date !== undefined && { date: patch.date }),
+          ...(patch.category !== undefined && { category: patch.category }),
+          ...(patch.description !== undefined && { description: patch.description ?? null }),
+          ...(patch.amount !== undefined && { amount: patch.amount }),
+          ...(patch.currency !== undefined && { currency: patch.currency }),
+        })
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
     onSuccess: (_data, { month }) => {
       qc.invalidateQueries({ queryKey: ["month-movements", month] });
       qc.invalidateQueries({ queryKey: ["dashboard-snapshot"] });
@@ -101,8 +135,10 @@ export function useUpdateMovement() {
 export function useDeleteMovement() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id }: { id: string; month: string }) =>
-      apiFetch(`/api/expenses/${id}`, { method: "DELETE" }),
+    mutationFn: async ({ id }: { id: string; month: string }) => {
+      const { error } = await supabase.from("movements").delete().eq("id", id);
+      if (error) throw error;
+    },
     onSuccess: (_data, { month }) => {
       qc.invalidateQueries({ queryKey: ["month-movements", month] });
       qc.invalidateQueries({ queryKey: ["dashboard-snapshot"] });
