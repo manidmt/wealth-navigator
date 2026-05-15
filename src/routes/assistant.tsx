@@ -72,7 +72,7 @@ function AssistantPage() {
           setMessages((m) => m.map((msg) => msg.pending ? { ...msg, id, content: token, pending: false } : msg));
         } else {
           const id = streamingIdRef.current;
-          setMessages((m) => m.map((msg) => msg.id === id ? { ...msg, content: msg.content + token } : msg));
+          setMessages((m) => m.map((msg) => msg.id === id ? { ...msg, content: msg.content + token, pending: false } : msg));
         }
         return;
       }
