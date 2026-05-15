@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      monthly_snapshots: {
+        Row: {
+          assets: number
+          closed_at: string | null
+          created_at: string
+          id: string
+          liabilities: number
+          month: string
+          net_worth: number
+          notes: string | null
+          portfolio_value: number
+          savings: number
+          user_id: string
+        }
+        Insert: {
+          assets?: number
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          liabilities?: number
+          month: string
+          net_worth?: number
+          notes?: string | null
+          portfolio_value?: number
+          savings?: number
+          user_id: string
+        }
+        Update: {
+          assets?: number
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          liabilities?: number
+          month?: string
+          net_worth?: number
+          notes?: string | null
+          portfolio_value?: number
+          savings?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       movements: {
         Row: {
           amount: number
