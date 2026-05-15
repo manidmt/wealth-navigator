@@ -64,7 +64,7 @@ const ASSET_LABELS: Record<string, string> = {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function computeDashboard(movements: any[], positions: any[]): DashboardData {
+function computeDashboard(movements: any[], positions: any[], snapshots: any[]): DashboardData {
   const now = new Date();
   const currentCalendarMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
@@ -132,20 +132,37 @@ function computeDashboard(movements: any[], positions: any[]): DashboardData {
     .map(([label, value]) => ({ label, value }))
     .sort((a, b) => b.value - a.value);
 
-  // Net worth series: cumulative savings + current portfolio value as constant baseline
+  // Series from real snapshots (sorted by month)
+  const snapshotMap = new Map<string, { netWorth: number; assets: number; liabilities: number }>();
+  for (const s of snapshots) {
+    snapshotMap.set(s.month as string, {
+      netWorth: Number(s.net_worth),
+      assets: Number(s.assets),
+      liabilities: Number(s.liabilities),
+    });
+  }
+
+  // Build series: prefer snapshot data, fall back to cumulative savings estimate
+  const allMonths = [...new Set([...snapshotMap.keys(), ...months])].sort();
   let cumSavings = 0;
-  const series: SeriesPoint[] = byMonth.map((m) => {
-    cumSavings += m.net;
-    return {
-      month: m.month,
-      assets: totalPortfolio + Math.max(0, cumSavings),
-      liabilities: 0,
-      netWorth: totalPortfolio + cumSavings,
-      savings: m.net,
-    };
+  const series: SeriesPoint[] = allMonths.map((month) => {
+    const snap = snapshotMap.get(month);
+    const movEntry = byMonthMap.get(month);
+    const movNet = movEntry ? movEntry.income - movEntry.expense : 0;
+    if (movEntry) cumSavings += movNet;
+    const savings = movNet;
+    if (snap) {
+      return { month, assets: snap.assets, liabilities: snap.liabilities, netWorth: snap.netWorth, savings };
+    }
+    return { month, assets: totalPortfolio + Math.max(0, cumSavings), liabilities: 0, netWorth: totalPortfolio + cumSavings, savings };
   });
 
-  const monthlyChange = latestEntry ? latestEntry.income - latestEntry.expense : 0;
+  const latestSnap = snapshots.length > 0 ? snapshots[snapshots.length - 1] : null;
+  const latestNetWorth = latestSnap ? Number(latestSnap.net_worth) : totalPortfolio;
+  const prevSnap = snapshots.length > 1 ? snapshots[snapshots.length - 2] : null;
+  const monthlyChange = latestSnap && prevSnap
+    ? Number(latestSnap.net_worth) - Number(prevSnap.net_worth)
+    : (latestEntry ? latestEntry.income - latestEntry.expense : 0);
 
   return {
     owner: "me",
@@ -154,11 +171,11 @@ function computeDashboard(movements: any[], positions: any[]): DashboardData {
     latestClosedMonth: latestMonth,
     latestMonth,
     summary: {
-      totalAssets: totalPortfolio,
-      totalLiabilities: 0,
-      netWorth: totalPortfolio + (series[series.length - 1]?.netWorth ?? 0) - totalPortfolio,
+      totalAssets: latestSnap ? Number(latestSnap.assets) : totalPortfolio,
+      totalLiabilities: latestSnap ? Number(latestSnap.liabilities) : 0,
+      netWorth: latestNetWorth,
       monthlyChange,
-      latestSavings: monthlyChange,
+      latestSavings: latestSnap ? Number(latestSnap.savings) : (latestEntry ? latestEntry.income - latestEntry.expense : 0),
     },
     allocation,
     platforms: byPlatform,
@@ -180,14 +197,17 @@ export function useLiveDashboardData() {
   return useQuery<DashboardData>({
     queryKey: ["dashboard-snapshot", user?.id],
     queryFn: async () => {
-      const [{ data: movements, error: movErr }, { data: positions, error: posErr }] =
+      const [{ data: movements, error: movErr }, { data: positions, error: posErr }, { data: snapshots, error: snapErr }] =
         await Promise.all([
           supabase.from("movements").select("type, date, category, amount, currency").order("date"),
           supabase.from("portfolio_positions").select("*"),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (supabase as any).from("monthly_snapshots").select("month, assets, liabilities, net_worth, savings, portfolio_value").order("month"),
         ]);
       if (movErr) throw movErr;
       if (posErr) throw posErr;
-      return computeDashboard(movements ?? [], positions ?? []);
+      if (snapErr) throw snapErr;
+      return computeDashboard(movements ?? [], positions ?? [], snapshots ?? []);
     },
     enabled: !!user,
     placeholderData: rawData as DashboardData,
