@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 
 import { useEffect } from "react";
+import { LoadingScreen } from "@/components/app/LoadingScreen";
 import appCss from "../styles.css?url";
 import { useLiveDashboardData, data as seedDashboardData } from "@/lib/dashboard-data";
 import { DashboardContext } from "@/hooks/use-dashboard";
@@ -158,13 +159,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (isLoginRoute) return <>{children}</>;
   if (loading || !session) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-[12px] uppercase tracking-[0.16em] text-muted-foreground">
-          Cargando…
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
   return <>{children}</>;
 }
