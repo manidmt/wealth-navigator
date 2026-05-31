@@ -8,6 +8,7 @@ import {
   Settings,
   MessageSquareText,
   LogOut,
+  CalendarRange,
 } from "lucide-react";
 import {
   Sidebar,
@@ -27,7 +28,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 type NavItem = {
   title: string;
-  url: "/" | "/expenses" | "/portfolio" | "/net-worth" | "/balances" | "/settings" | "/assistant";
+  url: "/" | "/expenses" | "/portfolio" | "/net-worth" | "/balances" | "/settings" | "/assistant" | "/planning";
   icon: typeof LayoutDashboard;
   exact?: boolean;
 };
@@ -36,6 +37,7 @@ const items: NavItem[] = [
   { title: "Resumen", url: "/", icon: LayoutDashboard, exact: true },
   { title: "Gastos mensuales", url: "/expenses", icon: Receipt },
   { title: "Portfolio", url: "/portfolio", icon: PieChart },
+  { title: "Planificación", url: "/planning", icon: CalendarRange },
   { title: "Patrimonio", url: "/net-worth", icon: TrendingUp },
   { title: "Saldos y cierres", url: "/balances", icon: Wallet },
   { title: "Studio Assistant", url: "/assistant", icon: MessageSquareText },
