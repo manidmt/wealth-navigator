@@ -95,7 +95,7 @@ function LoginPage() {
           </div>
           <div className="text-center">
             <h1 className="font-display text-xl font-semibold tracking-tight text-foreground">
-              Wealth Studio
+              Wealth OS
             </h1>
             <p className="mt-1 text-[12px] uppercase tracking-[0.16em] text-muted-foreground">
               {mode === "signin" ? "Inicia sesión" : "Crea tu cuenta"}

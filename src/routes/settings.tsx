@@ -13,7 +13,7 @@ import { useDashboard } from "@/hooks/use-dashboard";
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
-      { title: "Configuración — Wealth Studio" },
+      { title: "Configuración — Wealth OS" },
       { name: "description", content: "Tipos de cambio, propietario y preferencias." },
     ],
   }),
@@ -38,7 +38,7 @@ function SettingsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `wealth-studio-${data.latestMonth}.json`;
+    a.download = `wealth-os-${data.latestMonth}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -60,7 +60,7 @@ function SettingsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `wealth-studio-series-${data.latestMonth}.csv`;
+    a.download = `wealth-os-series-${data.latestMonth}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }

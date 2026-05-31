@@ -40,7 +40,7 @@ const items: NavItem[] = [
   { title: "Planificación", url: "/planning", icon: CalendarRange },
   { title: "Patrimonio", url: "/net-worth", icon: TrendingUp },
   { title: "Saldos y cierres", url: "/balances", icon: Wallet },
-  { title: "Studio Assistant", url: "/assistant", icon: MessageSquareText },
+  { title: "Asistente", url: "/assistant", icon: MessageSquareText },
   { title: "Configuración", url: "/settings", icon: Settings },
 ];
 
@@ -58,7 +58,7 @@ export function AppSidebar() {
           </div>
           <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
             <span className="font-display text-sm font-semibold tracking-tight">
-              Wealth Studio
+              Wealth OS
             </span>
             <span className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
               {data.owner}

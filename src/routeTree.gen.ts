@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PortfolioRouteImport } from './routes/portfolio'
+import { Route as PlanningRouteImport } from './routes/planning'
 import { Route as NetWorthRouteImport } from './routes/net-worth'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ExpensesRouteImport } from './routes/expenses'
@@ -26,6 +27,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const PortfolioRoute = PortfolioRouteImport.update({
   id: '/portfolio',
   path: '/portfolio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlanningRoute = PlanningRouteImport.update({
+  id: '/planning',
+  path: '/planning',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NetWorthRoute = NetWorthRouteImport.update({
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/expenses': typeof ExpensesRoute
   '/login': typeof LoginRoute
   '/net-worth': typeof NetWorthRoute
+  '/planning': typeof PlanningRoute
   '/portfolio': typeof PortfolioRoute
   '/settings': typeof SettingsRoute
 }
@@ -76,6 +83,7 @@ export interface FileRoutesByTo {
   '/expenses': typeof ExpensesRoute
   '/login': typeof LoginRoute
   '/net-worth': typeof NetWorthRoute
+  '/planning': typeof PlanningRoute
   '/portfolio': typeof PortfolioRoute
   '/settings': typeof SettingsRoute
 }
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/expenses': typeof ExpensesRoute
   '/login': typeof LoginRoute
   '/net-worth': typeof NetWorthRoute
+  '/planning': typeof PlanningRoute
   '/portfolio': typeof PortfolioRoute
   '/settings': typeof SettingsRoute
 }
@@ -99,6 +108,7 @@ export interface FileRouteTypes {
     | '/expenses'
     | '/login'
     | '/net-worth'
+    | '/planning'
     | '/portfolio'
     | '/settings'
   fileRoutesByTo: FileRoutesByTo
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/expenses'
     | '/login'
     | '/net-worth'
+    | '/planning'
     | '/portfolio'
     | '/settings'
   id:
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/expenses'
     | '/login'
     | '/net-worth'
+    | '/planning'
     | '/portfolio'
     | '/settings'
   fileRoutesById: FileRoutesById
@@ -130,6 +142,7 @@ export interface RootRouteChildren {
   ExpensesRoute: typeof ExpensesRoute
   LoginRoute: typeof LoginRoute
   NetWorthRoute: typeof NetWorthRoute
+  PlanningRoute: typeof PlanningRoute
   PortfolioRoute: typeof PortfolioRoute
   SettingsRoute: typeof SettingsRoute
 }
@@ -148,6 +161,13 @@ declare module '@tanstack/react-router' {
       path: '/portfolio'
       fullPath: '/portfolio'
       preLoaderRoute: typeof PortfolioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/planning': {
+      id: '/planning'
+      path: '/planning'
+      fullPath: '/planning'
+      preLoaderRoute: typeof PlanningRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/net-worth': {
@@ -202,9 +222,20 @@ const rootRouteChildren: RootRouteChildren = {
   ExpensesRoute: ExpensesRoute,
   LoginRoute: LoginRoute,
   NetWorthRoute: NetWorthRoute,
+  PlanningRoute: PlanningRoute,
   PortfolioRoute: PortfolioRoute,
   SettingsRoute: SettingsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

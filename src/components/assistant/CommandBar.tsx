@@ -52,7 +52,7 @@ export function CommandBar({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="overflow-hidden p-0 sm:max-w-[640px]">
-        <DialogTitle className="sr-only">Asistente de Wealth Studio</DialogTitle>
+        <DialogTitle className="sr-only">Asistente de Wealth OS</DialogTitle>
 
         <div className="flex items-center gap-3 border-b border-border px-4 py-3.5">
           <AssistantMark className="h-5 w-5 text-primary" />
@@ -66,7 +66,7 @@ export function CommandBar({
                 ask(query.trim());
               }
             }}
-            placeholder="Pregúntale al Studio Assistant…"
+            placeholder="Pregúntale al Asistente…"
             className="flex-1 bg-transparent text-[14.5px] outline-none placeholder:text-muted-foreground"
           />
           <kbd className="hidden rounded border border-border px-1.5 py-0.5 font-mono text-[10.5px] text-muted-foreground sm:inline">
@@ -143,7 +143,7 @@ export function CommandBar({
         </div>
 
         <div className="flex items-center justify-between border-t border-border bg-muted/30 px-4 py-2 text-[10.5px] text-muted-foreground">
-          <span>Studio Assistant · respuestas simuladas</span>
+          <span>Asistente · respuestas simuladas</span>
           <span className="hidden sm:inline">
             <kbd className="rounded border border-border px-1.5 py-0.5 font-mono">⌘K</kbd> para abrir
           </span>

@@ -19,11 +19,11 @@ export const Route = createFileRoute("/assistant")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
-      { title: "Studio Assistant — Wealth Studio" },
+      { title: "Asistente — Wealth OS" },
       {
         name: "description",
         content:
-          "Conversa con el agente del Wealth Studio: revisión mensual, rebalance, stress test y consultas libres.",
+          "Conversa con el agente de Wealth OS: revisión mensual, rebalance, stress test y consultas libres.",
       },
     ],
   }),
@@ -137,11 +137,11 @@ function AssistantPage() {
   }
 
   return (
-    <AppShell pageEyebrow="Studio Assistant">
+    <AppShell pageEyebrow="Asistente">
       <PageHeader
         eyebrow="Beta"
-        title="Studio Assistant"
-        description="Tu copiloto sobre el Wealth Studio. Pregunta por gastos, allocation, evolución o ejecuta un playbook."
+        title="Asistente"
+        description="Tu copiloto de Wealth OS. Pregunta por gastos, allocation, evolución o ejecuta un playbook."
         actions={
           messages.length > 0 ? (
             <button

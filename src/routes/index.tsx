@@ -20,7 +20,7 @@ import { useDashboard } from "@/hooks/use-dashboard";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Resumen — Wealth Studio" },
+      { title: "Resumen — Wealth OS" },
       {
         name: "description",
         content:

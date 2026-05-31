@@ -82,23 +82,29 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Wealth Studio" },
+      { title: "Wealth OS" },
       {
         name: "description",
         content:
           "Dashboard personal de patrimonio: resumen, gastos, portfolio, evolución y cierres mensuales.",
       },
       { name: "author", content: "Manuel" },
-      { property: "og:title", content: "Wealth Studio" },
+      { property: "og:title", content: "Wealth OS" },
       {
         property: "og:description",
-        content: "Dashboard personal de patrimonio premium.",
+        content: "Dashboard personal de patrimonio, gastos e inversiones.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "theme-color", content: "#0f172a" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-title", content: "WealthOS" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "manifest", href: "/manifest.json" },
+      { rel: "apple-touch-icon", href: "/icons/icon.svg" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
       {
@@ -123,6 +129,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
       <body>
         {children}
         <Scripts />
+        <script dangerouslySetInnerHTML={{ __html: `if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');` }} />
       </body>
     </html>
   );

@@ -1,7 +1,7 @@
 import { type SVGProps } from "react";
 
 /**
- * Wealth Studio brand monogram.
+ * Wealth OS brand monogram.
  * Two nested frames + a thin diagonal — editorial, geometric, no generic
  * "AI sparkle" or letterform. Uses currentColor so it adapts to the surface.
  */

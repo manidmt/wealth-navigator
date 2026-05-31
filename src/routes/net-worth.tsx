@@ -14,7 +14,7 @@ import { useDashboard } from "@/hooks/use-dashboard";
 export const Route = createFileRoute("/net-worth")({
   head: () => ({
     meta: [
-      { title: "Patrimonio — Wealth Studio" },
+      { title: "Patrimonio — Wealth OS" },
       { name: "description", content: "Evolución mensual del patrimonio neto, activos y pasivos." },
     ],
   }),

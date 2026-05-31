@@ -47,7 +47,7 @@ export function SectionCard({
             <button
               type="button"
               onClick={() => navigate({ to: "/assistant", search: { q: askPrompt } })}
-              title="Preguntar al Studio Assistant sobre esta tarjeta"
+              title="Preguntar al Asistente sobre esta tarjeta"
               className="inline-flex items-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-[11.5px] font-medium text-muted-foreground opacity-0 transition hover:border-border hover:bg-background hover:text-foreground focus:opacity-100 group-hover/section:opacity-100"
             >
               <AssistantMark className="h-3.5 w-3.5 text-primary" />

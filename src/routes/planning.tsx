@@ -55,7 +55,7 @@ import { formatMonth, euro } from "@/lib/dashboard-data";
 export const Route = createFileRoute("/planning")({
   head: () => ({
     meta: [
-      { title: "Planificación — Wealth Studio" },
+      { title: "Planificación — Wealth OS" },
       {
         name: "description",
         content:

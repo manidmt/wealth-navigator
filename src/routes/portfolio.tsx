@@ -22,7 +22,7 @@ import { X } from "lucide-react";
 export const Route = createFileRoute("/portfolio")({
   head: () => ({
     meta: [
-      { title: "Portfolio — Wealth Studio" },
+      { title: "Portfolio — Wealth OS" },
       {
         name: "description",
         content: "Posiciones invertidas, exposición por plataforma y por categoría.",

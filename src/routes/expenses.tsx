@@ -17,7 +17,7 @@ import { useDashboard } from "@/hooks/use-dashboard";
 export const Route = createFileRoute("/expenses")({
   head: () => ({
     meta: [
-      { title: "Gastos mensuales — Wealth Studio" },
+      { title: "Gastos mensuales — Wealth OS" },
       { name: "description", content: "Resumen mensual de ingresos y gastos por categoría con histórico." },
     ],
   }),

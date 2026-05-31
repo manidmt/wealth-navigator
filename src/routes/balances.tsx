@@ -13,7 +13,7 @@ import { useDashboard } from "@/hooks/use-dashboard";
 export const Route = createFileRoute("/balances")({
   head: () => ({
     meta: [
-      { title: "Saldos y cierres — Wealth Studio" },
+      { title: "Saldos y cierres — Wealth OS" },
       {
         name: "description",
         content: "Saldos por cuenta y cierres mensuales consolidados.",
