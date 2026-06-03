@@ -168,24 +168,29 @@ function computeDashboard(movements: any[], positions: any[], snapshots: any[]):
     ? (latestSnap.month as string)
     : (months[months.length - 1] ?? currentCalendarMonth);
 
+  // Estimate current total assets:
+  // Take the last snapshot's total (which includes cash, real estate, everything),
+  // then apply only the portfolio delta since that close.
+  // This avoids counting just the investment portfolio and missing other assets.
+  const snapPortfolioValue = latestSnap ? Number((latestSnap as Record<string, unknown>).portfolio_value ?? latestSnap.assets) : 0;
+  const portfolioDelta = latestSnap ? totalPortfolio - snapPortfolioValue : 0;
+  const liveAssets = latestSnap ? Number(latestSnap.assets) + portfolioDelta : totalPortfolio;
+  const liveLiabilities = latestSnap ? Number(latestSnap.liabilities) : 0;
+  const liveNetWorth = liveAssets + liveLiabilities;
+
   // Always include the current calendar month as a live entry.
-  // Uses live portfolio positions so net worth updates without manual closings.
   if (!series.some((s) => s.month === currentCalendarMonth)) {
     const movEntry = byMonthMap.get(currentCalendarMonth);
-    const liveLiabilities = latestSnap ? Number(latestSnap.liabilities) : 0;
     series.push({
       month: currentCalendarMonth,
-      assets: totalPortfolio,
+      assets: liveAssets,
       liabilities: liveLiabilities,
-      netWorth: totalPortfolio + liveLiabilities,
+      netWorth: liveNetWorth,
       savings: movEntry ? movEntry.income - movEntry.expense : 0,
     });
     series.sort((a, b) => a.month.localeCompare(b.month));
   }
 
-  // Summary always uses live portfolio data (not last snapshot).
-  const liveLiabilities = latestSnap ? Number(latestSnap.liabilities) : 0;
-  const liveNetWorth = totalPortfolio + liveLiabilities;
   const monthlyChange = latestSnap
     ? liveNetWorth - Number(latestSnap.net_worth)
     : (latestEntry ? latestEntry.income - latestEntry.expense : 0);
@@ -205,7 +210,7 @@ function computeDashboard(movements: any[], positions: any[], snapshots: any[]):
     latestClosedMonth,
     latestMonth: currentCalendarMonth,
     summary: {
-      totalAssets: totalPortfolio,
+      totalAssets: liveAssets,
       totalLiabilities: liveLiabilities,
       netWorth: liveNetWorth,
       monthlyChange,
