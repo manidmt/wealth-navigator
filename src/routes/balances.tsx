@@ -77,7 +77,7 @@ function BalancesPage() {
   return (
     <AppShell pageEyebrow="Cuentas y snapshots">
       <PageHeader
-        eyebrow={`Cierre ${formatMonth(data.latestMonth)}`}
+        eyebrow={`${data.latestMonth === data.currentCalendarMonth ? "En curso" : "Cierre"} · ${formatMonth(data.latestMonth)}`}
         title="Saldos y cierres"
         description="Saldos vivos por cuenta agrupados por bloque, y cierres mensuales registrados."
       />

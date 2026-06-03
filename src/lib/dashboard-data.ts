@@ -90,14 +90,7 @@ function computeDashboard(movements: any[], positions: any[], snapshots: any[]):
     return { month, value: expense, expenseTotal: expense, incomeTotal: income, net: income - expense };
   });
 
-  const latestMonth = months[months.length - 1] ?? currentCalendarMonth;
-  const latestEntry = byMonthMap.get(latestMonth);
-
-  const currentMonthCategories = latestEntry
-    ? [...latestEntry.categories.entries()]
-        .map(([label, value]) => ({ label, value }))
-        .sort((a, b) => b.value - a.value)
-    : [];
+  const latestEntry = byMonthMap.get(months[months.length - 1] ?? currentCalendarMonth);
 
   // Portfolio
   const totalPortfolio = positions.reduce(
@@ -171,34 +164,62 @@ function computeDashboard(movements: any[], positions: any[], snapshots: any[]):
   }
 
   const latestSnap = snapshots.length > 0 ? snapshots[snapshots.length - 1] : null;
-  const latestNetWorth = latestSnap ? Number(latestSnap.net_worth) : totalPortfolio;
-  const prevSnap = snapshots.length > 1 ? snapshots[snapshots.length - 2] : null;
-  const monthlyChange = latestSnap && prevSnap
-    ? Number(latestSnap.net_worth) - Number(prevSnap.net_worth)
+  const latestClosedMonth = latestSnap
+    ? (latestSnap.month as string)
+    : (months[months.length - 1] ?? currentCalendarMonth);
+
+  // Always include the current calendar month as a live entry.
+  // Uses live portfolio positions so net worth updates without manual closings.
+  if (!series.some((s) => s.month === currentCalendarMonth)) {
+    const movEntry = byMonthMap.get(currentCalendarMonth);
+    const liveLiabilities = latestSnap ? Number(latestSnap.liabilities) : 0;
+    series.push({
+      month: currentCalendarMonth,
+      assets: totalPortfolio,
+      liabilities: liveLiabilities,
+      netWorth: totalPortfolio + liveLiabilities,
+      savings: movEntry ? movEntry.income - movEntry.expense : 0,
+    });
+    series.sort((a, b) => a.month.localeCompare(b.month));
+  }
+
+  // Summary always uses live portfolio data (not last snapshot).
+  const liveLiabilities = latestSnap ? Number(latestSnap.liabilities) : 0;
+  const liveNetWorth = totalPortfolio + liveLiabilities;
+  const monthlyChange = latestSnap
+    ? liveNetWorth - Number(latestSnap.net_worth)
     : (latestEntry ? latestEntry.income - latestEntry.expense : 0);
+
+  // Current month expenses always reference the current calendar month.
+  const currentMovEntry = byMonthMap.get(currentCalendarMonth);
+  const currentMonthCats = currentMovEntry
+    ? [...currentMovEntry.categories.entries()]
+        .map(([label, value]) => ({ label, value }))
+        .sort((a, b) => b.value - a.value)
+    : [];
 
   return {
     owner: "me",
     generatedAt: new Date().toISOString(),
     currentCalendarMonth,
-    latestClosedMonth: latestMonth,
-    latestMonth,
+    latestClosedMonth,
+    latestMonth: currentCalendarMonth,
     summary: {
-      totalAssets: latestSnap ? Number(latestSnap.assets) : totalPortfolio,
-      totalLiabilities: latestSnap ? Number(latestSnap.liabilities) : 0,
-      netWorth: latestNetWorth,
+      totalAssets: totalPortfolio,
+      totalLiabilities: liveLiabilities,
+      netWorth: liveNetWorth,
       monthlyChange,
-      latestSavings: latestSnap ? Number(latestSnap.savings) : (latestEntry ? latestEntry.income - latestEntry.expense : 0),
+      latestSavings: currentMovEntry ? currentMovEntry.income - currentMovEntry.expense : 0,
     },
     allocation,
     platforms: byPlatform,
     holdings,
     portfolio: { holdings, byPlatform },
     expenses: {
-      currentMonth: latestMonth,
-      currentMonthTotal: latestEntry?.expense ?? 0,
-      currentMonthIncome: latestEntry?.income ?? 0,
-      currentMonthCategories,
+      currentMonth: currentCalendarMonth,
+      currentMonthTotal: currentMovEntry?.expense ?? 0,
+      currentMonthIncome: currentMovEntry?.income ?? 0,
+      currentMonthCategories: currentMonthCats,
       byMonth,
     },
     series,

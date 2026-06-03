@@ -36,9 +36,9 @@ function HomePage() {
   return (
     <AppShell pageEyebrow="Resumen ejecutivo">
       <PageHeader
-        eyebrow={`Cierre ${formatMonth(data.latestMonth)}`}
+        eyebrow={`${data.latestMonth === data.currentCalendarMonth ? "En curso" : "Cierre"} · ${formatMonth(data.latestMonth)}`}
         title="Resumen"
-        description={`Vista ejecutiva del patrimonio de ${data.owner}. Cifras consolidadas sobre el último cierre disponible.`}
+        description={`Vista ejecutiva del patrimonio de ${data.owner}. Cifras en tiempo real basadas en posiciones actuales.`}
         actions={
           <Link
             to="/net-worth"
@@ -51,7 +51,7 @@ function HomePage() {
 
       <RangeProvider defaultRange="12M">
         <div className="px-4 md:px-8">
-          <RangeToolbar label={`Cierre ${formatMonth(data.latestMonth)}`} />
+          <RangeToolbar label={`${data.latestMonth === data.currentCalendarMonth ? "En curso" : "Cierre"} · ${formatMonth(data.latestMonth)}`} />
         </div>
         <HomeBody />
       </RangeProvider>
