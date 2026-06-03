@@ -90,7 +90,6 @@ function computeDashboard(movements: any[], positions: any[], snapshots: any[]):
     return { month, value: expense, expenseTotal: expense, incomeTotal: income, net: income - expense };
   });
 
-  const latestEntry = byMonthMap.get(months[months.length - 1] ?? currentCalendarMonth);
 
   // Portfolio
   const totalPortfolio = positions.reduce(
@@ -135,68 +134,89 @@ function computeDashboard(movements: any[], positions: any[], snapshots: any[]):
     });
   }
 
-  // Build series:
-  // - If snapshots exist: use only snapshot months (real closed data). Movement-only months
-  //   (open/in-progress) are excluded to avoid showing inaccurate estimates as current net worth.
-  // - If no snapshots: fall back to cumulative savings from movements as an approximation.
+  // Build series by walking months chronologically from the oldest snapshot (anchor).
+  // Where a snapshot exists, use it verbatim (accurate). For months with only movements
+  // (no snapshot), estimate: prev_net_worth + net_savings. This means no manual monthly
+  // closing is required — the series auto-extends from movements alone.
+  type SnapRecord = Record<string, unknown>;
+  const snapMap = new Map<string, SnapRecord>();
+  for (const s of snapshots) snapMap.set(s.month as string, s as SnapRecord);
+  const latestSnap = snapshots.length > 0 ? snapshots[snapshots.length - 1] as SnapRecord : null;
+  const oldestSnap = snapshots.length > 0 ? snapshots[0] as SnapRecord : null;
+
   let series: SeriesPoint[];
-  if (snapshots.length > 0) {
-    series = (snapshots as Record<string, unknown>[]).map((s) => {
-      const month = s.month as string;
-      const movEntry = byMonthMap.get(month);
-      const savings = movEntry ? movEntry.income - movEntry.expense : Number(s.savings ?? 0);
-      return {
-        month,
-        assets: Number(s.assets),
-        liabilities: Number(s.liabilities),
-        netWorth: Number(s.net_worth),
-        savings,
-      };
+
+  if (!oldestSnap) {
+    // No anchor at all — accumulate savings as a relative approximation.
+    let prev = 0;
+    series = months.map((month) => {
+      const e = byMonthMap.get(month)!;
+      const savings = e.income - e.expense;
+      prev += savings;
+      return { month, assets: Math.max(0, prev), liabilities: 0, netWorth: prev, savings };
     });
   } else {
-    let cumSavings = 0;
-    series = months.map((month) => {
-      const movEntry = byMonthMap.get(month)!;
-      const movNet = movEntry.income - movEntry.expense;
-      cumSavings += movNet;
-      return { month, assets: totalPortfolio + Math.max(0, cumSavings), liabilities: 0, netWorth: totalPortfolio + cumSavings, savings: movNet };
-    });
+    const oldestMonth = oldestSnap.month as string;
+
+    // All months starting from the oldest anchor (union of snapshot months + movement months).
+    const allMonths = [...new Set([
+      ...[...snapMap.keys()],
+      ...months.filter((m) => m >= oldestMonth),
+    ])].sort();
+
+    let prevNW = Number(oldestSnap.net_worth);
+    let prevAssets = Number(oldestSnap.assets);
+    let prevLiabilities = Number(oldestSnap.liabilities);
+    series = [];
+
+    for (const month of allMonths) {
+      const movEntry = byMonthMap.get(month);
+      const savings = movEntry ? movEntry.income - movEntry.expense : 0;
+
+      if (snapMap.has(month)) {
+        const snap = snapMap.get(month)!;
+        prevNW = Number(snap.net_worth);
+        prevAssets = Number(snap.assets);
+        prevLiabilities = Number(snap.liabilities);
+      } else {
+        // Estimate: carry forward liabilities, apply net savings to assets and net worth.
+        prevAssets += savings;
+        prevNW += savings;
+      }
+      series.push({ month, assets: prevAssets, liabilities: prevLiabilities, netWorth: prevNW, savings });
+    }
   }
 
-  const latestSnap = snapshots.length > 0 ? snapshots[snapshots.length - 1] : null;
   const latestClosedMonth = latestSnap
     ? (latestSnap.month as string)
     : (months[months.length - 1] ?? currentCalendarMonth);
 
-  // Estimate current total assets:
-  // Take the last snapshot's total (which includes cash, real estate, everything),
-  // then apply only the portfolio delta since that close.
-  // This avoids counting just the investment portfolio and missing other assets.
-  const snapPortfolioValue = latestSnap ? Number((latestSnap as Record<string, unknown>).portfolio_value ?? latestSnap.assets) : 0;
-  const portfolioDelta = latestSnap ? totalPortfolio - snapPortfolioValue : 0;
-  const liveAssets = latestSnap ? Number(latestSnap.assets) + portfolioDelta : totalPortfolio;
-  const liveLiabilities = latestSnap ? Number(latestSnap.liabilities) : 0;
-  const liveNetWorth = liveAssets + liveLiabilities;
+  // Current month (always live, never requires a manual close).
+  // Net worth = last month's net worth + current savings + portfolio price delta since last snapshot.
+  const lastEntry = series.length > 0 ? series[series.length - 1] : null;
+  const currentMovEntry = byMonthMap.get(currentCalendarMonth);
+  const currentSavings = currentMovEntry ? currentMovEntry.income - currentMovEntry.expense : 0;
+  const snapPortfolioValue = latestSnap ? Number(latestSnap.portfolio_value ?? 0) : 0;
+  const portfolioDelta = latestSnap && snapPortfolioValue > 0 ? totalPortfolio - snapPortfolioValue : 0;
+  const baseLiabilities = lastEntry ? lastEntry.liabilities : 0;
 
-  // Always include the current calendar month as a live entry.
+  // If currentCalendarMonth is already in series (snapshot exists), use it; otherwise compute live.
   if (!series.some((s) => s.month === currentCalendarMonth)) {
-    const movEntry = byMonthMap.get(currentCalendarMonth);
+    const baseNW = lastEntry ? lastEntry.netWorth : 0;
+    const liveNW = baseNW + currentSavings + portfolioDelta;
     series.push({
       month: currentCalendarMonth,
-      assets: liveAssets,
-      liabilities: liveLiabilities,
-      netWorth: liveNetWorth,
-      savings: movEntry ? movEntry.income - movEntry.expense : 0,
+      assets: liveNW - baseLiabilities,
+      liabilities: baseLiabilities,
+      netWorth: liveNW,
+      savings: currentSavings,
     });
-    series.sort((a, b) => a.month.localeCompare(b.month));
   }
 
-  const monthlyChange = latestSnap
-    ? liveNetWorth - Number(latestSnap.net_worth)
-    : (latestEntry ? latestEntry.income - latestEntry.expense : 0);
+  const liveEntry = series.find((s) => s.month === currentCalendarMonth)!;
+  const prevEntry = series.length > 1 ? series[series.length - 2] : null;
+  const monthlyChange = prevEntry ? liveEntry.netWorth - prevEntry.netWorth : currentSavings;
 
-  // Current month expenses always reference the current calendar month.
-  const currentMovEntry = byMonthMap.get(currentCalendarMonth);
   const currentMonthCats = currentMovEntry
     ? [...currentMovEntry.categories.entries()]
         .map(([label, value]) => ({ label, value }))
@@ -210,11 +230,11 @@ function computeDashboard(movements: any[], positions: any[], snapshots: any[]):
     latestClosedMonth,
     latestMonth: currentCalendarMonth,
     summary: {
-      totalAssets: liveAssets,
-      totalLiabilities: liveLiabilities,
-      netWorth: liveNetWorth,
+      totalAssets: liveEntry.assets,
+      totalLiabilities: liveEntry.liabilities,
+      netWorth: liveEntry.netWorth,
       monthlyChange,
-      latestSavings: currentMovEntry ? currentMovEntry.income - currentMovEntry.expense : 0,
+      latestSavings: currentSavings,
     },
     allocation,
     platforms: byPlatform,
