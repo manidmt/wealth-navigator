@@ -83,14 +83,21 @@ async function main() {
 
   console.log("\n3. Authenticating in new project...");
   let newUserId: string;
-  try {
-    newUserId = await signIn(newClient, EMAIL, PASS, "new");
-  } catch {
-    console.log("   User not found in new project, signing up...");
-    newUserId = await signUp(newClient, EMAIL, PASS);
-    console.log(`   new user_id (after signup): ${newUserId}`);
-    // Small delay for trigger to fire
-    await new Promise(r => setTimeout(r, 1000));
+  const { data: loginData, error: loginError } = await newClient.auth.signInWithPassword({ email: EMAIL, password: PASS });
+  if (!loginError && loginData.user) {
+    newUserId = loginData.user.id;
+    console.log(`   new user_id: ${newUserId}`);
+  } else {
+    console.log("   User not found, signing up...");
+    const { data: signupData, error: signupError } = await newClient.auth.signUp({ email: EMAIL, password: PASS });
+    if (signupError) throw new Error(`Signup failed: ${signupError.message}`);
+    if (!signupData.user) throw new Error("Signup returned no user — disable 'Confirm email' in Auth → Providers → Email");
+    await new Promise(r => setTimeout(r, 1500)); // wait for trigger
+    // Sign in explicitly to get an active session (signup session may be null if confirmation is pending)
+    const { data: reloginData, error: reloginError } = await newClient.auth.signInWithPassword({ email: EMAIL, password: PASS });
+    if (reloginError) throw new Error(`Login after signup failed: ${reloginError.message}\nEnsure 'Confirm email' is DISABLED in Authentication → Providers → Email`);
+    newUserId = reloginData.user!.id;
+    console.log(`   new user_id: ${newUserId}`);
   }
 
   console.log("\n4. Migrating data...");
@@ -99,7 +106,9 @@ async function main() {
   const newProfiles = profiles.map(p => ({ ...p, id: newUserId }));
   await upsert(newClient, "profiles", newProfiles, "id");
 
-  await upsert(newClient, "user_roles", substituteUserId(roles, oldUserId, newUserId));
+  // user_roles: skipped — trigger on_auth_user_created already inserted 'user' role on signup
+  console.log(`  user_roles: skipped (trigger handles it) — exported ${roles.length} rows`);
+
   await upsert(newClient, "movements", substituteUserId(movements, oldUserId, newUserId));
   await upsert(newClient, "portfolio_positions", substituteUserId(positions, oldUserId, newUserId));
   await upsert(newClient, "monthly_snapshots", substituteUserId(snapshots, oldUserId, newUserId));
