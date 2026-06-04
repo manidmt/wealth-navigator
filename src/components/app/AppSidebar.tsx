@@ -28,7 +28,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 type NavItem = {
   title: string;
-  url: "/" | "/expenses" | "/portfolio" | "/net-worth" | "/balances" | "/settings" | "/assistant" | "/planning";
+  url: "/" | "/expenses" | "/portfolio" | "/net-worth" | "/balances" | "/settings" | "/assistant" | "/planning" | "/bank-callback";
   icon: typeof LayoutDashboard;
   exact?: boolean;
 };

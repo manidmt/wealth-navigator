@@ -1,5 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Download, FileJson, FileSpreadsheet, Globe, User2 } from "lucide-react";
+import { useState } from "react";
+import { Download, FileJson, FileSpreadsheet, Globe, User2, Building2, RefreshCw, Unlink, Plus, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import {
+  useBankConnections,
+  useConnectBank,
+  useSyncBank,
+  useDisconnectBank,
+  INSTITUTIONS,
+  type BankConnection,
+} from "@/lib/bank-api";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { AppShell } from "@/components/app/AppShell";
 import { PageHeader, SectionCard, SectionLabel } from "@/components/app/SectionCard";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +42,131 @@ const fxRates = [
   { currency: "CAD", rate: 0.68, source: "manual", updated: "2026-04-30" },
   { currency: "GBP", rate: 1.17, source: "manual", updated: "2026-04-30" },
 ];
+
+function StatusBadge({ status }: { status: BankConnection["status"] }) {
+  if (status === "active") return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-positive/10 px-2 py-0.5 text-[11px] font-medium text-positive ring-1 ring-positive/30">
+      <CheckCircle2 className="h-3 w-3" /> Activa
+    </span>
+  );
+  if (status === "pending") return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-medium text-warning ring-1 ring-warning/30">
+      <Clock className="h-3 w-3" /> Pendiente
+    </span>
+  );
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive ring-1 ring-destructive/30">
+      <AlertCircle className="h-3 w-3" /> {status === "expired" ? "Expirada" : "Error"}
+    </span>
+  );
+}
+
+function BankSection() {
+  const { data: connections = [], isLoading } = useBankConnections();
+  const connectBank = useConnectBank();
+  const syncBank = useSyncBank();
+  const disconnectBank = useDisconnectBank();
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  async function handleConnect(institution: typeof INSTITUTIONS[number]) {
+    const result = await connectBank.mutateAsync(institution);
+    setDialogOpen(false);
+    window.location.href = result.link;
+  }
+
+  return (
+    <SectionCard
+      title="Cuentas bancarias"
+      description="Conecta tus bancos vía Open Banking para importar transacciones automáticamente."
+    >
+      <div className="space-y-3">
+        {isLoading && (
+          <p className="text-[13px] text-muted-foreground">Cargando…</p>
+        )}
+
+        {connections.map((conn) => (
+          <div
+            key={conn.id}
+            className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-4 py-3"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <div className="min-w-0">
+                <div className="text-[13px] font-medium">{conn.institution_name}</div>
+                <div className="text-[11px] text-muted-foreground">
+                  {conn.last_synced_at
+                    ? `Sincronizado ${new Date(conn.last_synced_at).toLocaleDateString("es-ES")}`
+                    : "Sin sincronizar"}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <StatusBadge status={conn.status} />
+              {conn.status === "active" && (
+                <button
+                  type="button"
+                  title="Sincronizar"
+                  onClick={() => syncBank.mutate(conn.id)}
+                  disabled={syncBank.isPending}
+                  className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition hover:bg-background hover:text-foreground disabled:opacity-40"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${syncBank.isPending ? "animate-spin" : ""}`} />
+                </button>
+              )}
+              <button
+                type="button"
+                title="Desconectar"
+                onClick={() => disconnectBank.mutate(conn.id)}
+                className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition hover:bg-background hover:text-destructive"
+              >
+                <Unlink className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        ))}
+
+        {connections.length === 0 && !isLoading && (
+          <p className="text-[13px] text-muted-foreground">
+            Ningún banco conectado. Conecta tu primer banco para importar transacciones automáticamente.
+          </p>
+        )}
+
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-2 rounded-md border border-dashed border-border px-4 py-2.5 text-[13px] text-muted-foreground transition hover:border-border-strong hover:text-foreground"
+            >
+              <Plus className="h-4 w-4" /> Conectar banco
+            </button>
+          </DialogTrigger>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Selecciona tu banco</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-2 pt-2">
+              {INSTITUTIONS.map((inst) => (
+                <button
+                  key={inst.id}
+                  type="button"
+                  onClick={() => handleConnect(inst)}
+                  disabled={connectBank.isPending}
+                  className="flex items-center gap-3 rounded-lg border border-border px-4 py-3 text-left text-[13px] font-medium transition hover:bg-muted disabled:opacity-40"
+                >
+                  <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  {inst.name}
+                </button>
+              ))}
+            </div>
+            {connectBank.isError && (
+              <p className="text-[12px] text-destructive">{(connectBank.error as Error).message}</p>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+    </SectionCard>
+  );
+}
 
 function SettingsPage() {
   const data = useDashboard();
@@ -235,6 +376,8 @@ function SettingsPage() {
             </div>
           </SectionCard>
         </section>
+
+        <BankSection />
 
         <section>
           <SectionLabel>Estado del proyecto</SectionLabel>
