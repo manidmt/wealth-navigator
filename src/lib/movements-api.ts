@@ -132,6 +132,42 @@ export function useUpdateMovement() {
   });
 }
 
+export type BulkImportResult = { inserted: number; skipped: number };
+
+type BulkRow = { type: MovementType; date: string; description: string; amount: number; currency: string; external_id: string };
+
+export function useBulkImportMovements() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async (rows: BulkRow[]): Promise<BulkImportResult> => {
+      if (!user) throw new Error("No autenticado");
+      const records = rows.map((r) => ({
+        user_id: user.id,
+        type: r.type,
+        date: r.date,
+        category: "Sin categoría",
+        description: r.description,
+        amount: r.amount,
+        currency: r.currency,
+        external_id: r.external_id,
+      }));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from("movements")
+        .upsert(records, { onConflict: "external_id", ignoreDuplicates: true })
+        .select("id");
+      if (error) throw error;
+      const inserted = (data ?? []).length;
+      return { inserted, skipped: rows.length - inserted };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["month-movements"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-snapshot"] });
+    },
+  });
+}
+
 export function useDeleteMovement() {
   const qc = useQueryClient();
   return useMutation({

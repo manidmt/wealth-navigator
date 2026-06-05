@@ -8,6 +8,7 @@ import { BarList, MonthlyExpensesBars, Sparkline } from "@/components/charts/cha
 import { RangeProvider, RangeToolbar, useRange } from "@/components/app/RangeToolbar";
 import { MonthDetailDrawer } from "@/components/app/MonthDetailDrawer";
 import { AddMovementSheet } from "@/components/app/AddMovementSheet";
+import { CsvImportSheet } from "@/components/app/CsvImportSheet";
 import { ExpenseTagsBreakdown } from "@/components/app/ExpenseTagsBreakdown";
 import { useMoney } from "@/components/app/CurrencyProvider";
 import { EXPENSE_TAGS, tagSeries } from "@/lib/expense-tags";
@@ -27,6 +28,7 @@ export const Route = createFileRoute("/expenses")({
 function ExpensesPage() {
   const data = useDashboard();
   const [addOpen, setAddOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   return (
     <AppShell pageEyebrow="Movimientos">
       <PageHeader
@@ -34,14 +36,23 @@ function ExpensesPage() {
         title="Gastos mensuales"
         description="Ingresos y gastos del periodo actual con vista histórica configurable."
         actions={
-          <button
-            type="button"
-            onClick={() => setAddOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-2 text-[13px] font-medium text-foreground/80 transition hover:border-border-strong hover:text-foreground"
-          >
-            <span className="text-[16px] leading-none">+</span>
-            Añadir
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setImportOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-2 text-[13px] font-medium text-foreground/80 transition hover:border-border-strong hover:text-foreground"
+            >
+              CSV
+            </button>
+            <button
+              type="button"
+              onClick={() => setAddOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-2 text-[13px] font-medium text-foreground/80 transition hover:border-border-strong hover:text-foreground"
+            >
+              <span className="text-[16px] leading-none">+</span>
+              Añadir
+            </button>
+          </div>
         }
       />
       <RangeProvider defaultRange="12M">
@@ -55,6 +66,7 @@ function ExpensesPage() {
         onOpenChange={setAddOpen}
         defaultMonth={data.expenses.currentMonth}
       />
+      <CsvImportSheet open={importOpen} onOpenChange={setImportOpen} />
     </AppShell>
   );
 }
