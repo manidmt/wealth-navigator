@@ -60,5 +60,21 @@ export function evaluateBase(rule: LadderRule | MatrixRule | undefined, signals:
     const multi = hit.length ? Math.max(...hit.map((st) => st.multi)) : rule.default;
     return { multi, detail: `${rule.signal}=${s.value.toFixed(3)} → x${multi}` };
   }
-  return { multi: 1, detail: "matrix: pendiente" }; // se completa en Task 4
+  const row = signals[rule.row_signal];
+  const col = signals[rule.col_signal];
+  if (!row || !col) return { multi: 1, detail: "matrix: sin datos" };
+  let r = rule.row_breaks.findIndex((b) => row.value >= b);
+  if (r === -1) r = rule.row_breaks.length;
+  const c = rule.col_breaks.filter((b) => col.value > b).length;
+  let multi = rule.values[r][c];
+  let detail = `${rule.row_signal}=${row.value} × ${rule.col_signal}=${col.value} → x${multi}`;
+  if (rule.bonus) {
+    const bs = signals[rule.bonus.signal];
+    if (bs && bs.value <= rule.bonus.lte) {
+      multi += rule.bonus.add;
+      detail += ` +${rule.bonus.add} bonus`;
+    }
+  }
+  multi = Math.min(multi, rule.max);
+  return { multi, detail };
 }
