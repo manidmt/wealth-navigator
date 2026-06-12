@@ -41,12 +41,18 @@ serve(async (req) => {
     .map(([k, s]) => ({ signal: k, date: s!.date }));
 
   const strategies = (plans ?? []).map((p) => {
+    const plan = {
+      amount: p.amount == null ? null : Number(p.amount),
+      multiplier_rules: p.multiplier_rules,
+      annual_multiplier: Number(p.annual_multiplier ?? 1),
+      annual_multiplier_year: p.annual_multiplier_year == null ? null : Number(p.annual_multiplier_year),
+    };
     const tr = evaluateTrigger(p.multiplier_rules?.trigger, signals, p.dry_powder?.last_fired_at ?? null);
     return {
       name: p.name,
-      base_eur: p.amount,
-      multiplier: currentMultiplier(p, signals),
-      effective_eur: effectiveQuota(p, signals),
+      base_eur: plan.amount,
+      multiplier: currentMultiplier(plan, signals),
+      effective_eur: effectiveQuota(plan, signals),
       dry_powder_eur: p.dry_powder?.current_eur ?? null,
       trigger: { fired: tr.fired, blocked: tr.blocked, detail: tr.detail },
     };
