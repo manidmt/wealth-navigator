@@ -2,9 +2,17 @@
 // Compartido entre Edge Functions (Deno) y frontend (re-export en src/lib).
 
 export type SignalKey =
-  | "vix" | "dxy" | "tips_10y_real" | "hy_spread"
-  | "msci_dd" | "gold_dd" | "btc_dd" | "btc_p200w"
-  | "btc_mvrv" | "btc_puell" | "insiders_ratio";
+  | "vix"
+  | "dxy"
+  | "tips_10y_real"
+  | "hy_spread"
+  | "msci_dd"
+  | "gold_dd"
+  | "btc_dd"
+  | "btc_p200w"
+  | "btc_mvrv"
+  | "btc_puell"
+  | "insiders_ratio";
 
 export type SignalValue = { value: number; date: string; source: "auto" | "manual" };
 export type SignalMap = Partial<Record<SignalKey, SignalValue>>;
@@ -51,7 +59,10 @@ export function isStale(s: SignalValue, now: Date = new Date()): boolean {
 
 export type BaseResult = { multi: number; detail: string };
 
-export function evaluateBase(rule: LadderRule | MatrixRule | undefined, signals: SignalMap): BaseResult {
+export function evaluateBase(
+  rule: LadderRule | MatrixRule | undefined,
+  signals: SignalMap,
+): BaseResult {
   if (!rule) return { multi: 1, detail: "sin regla" };
   if (rule.type === "ladder") {
     const s = signals[rule.signal];
@@ -103,22 +114,31 @@ export function evaluateTrigger(
   for (const c of rule.conditions) {
     const s = signals[c.signal];
     if (!s) return { fired: false, blocked: "stale_signal", detail: `${c.signal}: sin dato` };
-    if (isStale(s, now)) return { fired: false, blocked: "stale_signal", detail: `${c.signal}: caducada (${s.date})` };
+    if (isStale(s, now))
+      return { fired: false, blocked: "stale_signal", detail: `${c.signal}: caducada (${s.date})` };
   }
 
   const met = rule.conditions.every((c) => OPS[c.op](signals[c.signal]!.value, c.value));
   if (!met) {
     const detail = rule.conditions
-      .map((c) => `${c.signal}=${signals[c.signal]!.value} ${OPS[c.op](signals[c.signal]!.value, c.value) ? "✓" : "✗"}`)
+      .map(
+        (c) =>
+          `${c.signal}=${signals[c.signal]!.value} ${OPS[c.op](signals[c.signal]!.value, c.value) ? "✓" : "✗"}`,
+      )
       .join(" · ");
     return { fired: false, blocked: null, detail };
   }
 
   if (lastFiredAt) {
     const last = new Date(lastFiredAt);
-    const months = (now.getFullYear() - last.getFullYear()) * 12 + (now.getMonth() - last.getMonth());
+    const months =
+      (now.getFullYear() - last.getFullYear()) * 12 + (now.getMonth() - last.getMonth());
     if (months < rule.cooldown_months) {
-      return { fired: false, blocked: "cooldown", detail: `cooldown hasta ${rule.cooldown_months - months} meses más` };
+      return {
+        fired: false,
+        blocked: "cooldown",
+        detail: `cooldown hasta ${rule.cooldown_months - months} meses más`,
+      };
     }
   }
   return { fired: true, blocked: null, detail: `disparo x${rule.multi}` };

@@ -59,11 +59,16 @@ const goldSig = (tips: number, dxy: number, dd = 0): SignalMap => ({
 });
 
 describe("matrix rule (oro TIPS×DXY)", () => {
-  it("tips 1.2, dxy 95 → 1", () => expect(evaluateBase(goldMatrix, goldSig(1.2, 95)).multi).toBe(1));
-  it("tips 1.0 (≥1%), dxy 100 (≤100) → 1", () => expect(evaluateBase(goldMatrix, goldSig(1.0, 100)).multi).toBe(1));
-  it("tips 0.7, dxy 105 → 2", () => expect(evaluateBase(goldMatrix, goldSig(0.7, 105)).multi).toBe(2));
-  it("tips 0.3, dxy 115 → 4", () => expect(evaluateBase(goldMatrix, goldSig(0.3, 115)).multi).toBe(4));
-  it("tips -0.2, dxy 125 → 6", () => expect(evaluateBase(goldMatrix, goldSig(-0.2, 125)).multi).toBe(6));
+  it("tips 1.2, dxy 95 → 1", () =>
+    expect(evaluateBase(goldMatrix, goldSig(1.2, 95)).multi).toBe(1));
+  it("tips 1.0 (≥1%), dxy 100 (≤100) → 1", () =>
+    expect(evaluateBase(goldMatrix, goldSig(1.0, 100)).multi).toBe(1));
+  it("tips 0.7, dxy 105 → 2", () =>
+    expect(evaluateBase(goldMatrix, goldSig(0.7, 105)).multi).toBe(2));
+  it("tips 0.3, dxy 115 → 4", () =>
+    expect(evaluateBase(goldMatrix, goldSig(0.3, 115)).multi).toBe(4));
+  it("tips -0.2, dxy 125 → 6", () =>
+    expect(evaluateBase(goldMatrix, goldSig(-0.2, 125)).multi).toBe(6));
   it("bonus DD: tips 0.3, dxy 115, dd -16% → 5", () =>
     expect(evaluateBase(goldMatrix, goldSig(0.3, 115, -0.16)).multi).toBe(5));
   it("clamp max: tips -0.2, dxy 125, dd -16% → 6", () =>
@@ -108,7 +113,12 @@ describe("combo trigger", () => {
     expect(r.blocked).toBe("stale_signal");
   });
   it("señal ausente bloquea como stale", () => {
-    const r = evaluateTrigger(vixCombo, { vix: { value: 55, date: "2026-06-11", source: "auto" } }, null, NOW);
+    const r = evaluateTrigger(
+      vixCombo,
+      { vix: { value: 55, date: "2026-06-11", source: "auto" } },
+      null,
+      NOW,
+    );
     expect(r.fired).toBe(false);
     expect(r.blocked).toBe("stale_signal");
   });
