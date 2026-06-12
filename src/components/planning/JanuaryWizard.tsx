@@ -42,9 +42,10 @@ export function JanuaryWizard({
                 <p className="font-medium">{p.name}</p>
                 <p className="text-[11px] text-muted-foreground">{proposal.detail}</p>
                 <p className="text-[11px]">
-                  Propuesta: <b>×{proposal.multi}</b> → cuota {base * proposal.multi} €/mes
+                  Propuesta: <b>×{proposal.multi}</b> → cuota {(base * proposal.multi).toFixed(0)}{" "}
+                  €/mes
                   {p.asset_class === "btc" &&
-                    ` (compra anual: ${base * proposal.multi * 12} € de golpe)`}
+                    ` (compra anual: ${(base * proposal.multi * 12).toFixed(0)} € de golpe)`}
                 </p>
               </div>
               <Button

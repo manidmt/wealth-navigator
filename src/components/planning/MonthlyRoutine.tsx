@@ -25,7 +25,7 @@ function buildItems(
     if (p.dry_powder && p.dry_powder.monthly_feed_eur > 0) {
       items.push({
         key: `feed-${p.id}`,
-        label: `Transferir ${p.dry_powder.monthly_feed_eur} € a pólvora de ${p.name}`,
+        label: `Transferir ${Number(p.dry_powder.monthly_feed_eur).toFixed(0)} € a pólvora de ${p.name}`,
       });
     }
   }
@@ -39,7 +39,7 @@ function buildItems(
     if (tr.fired && (p.dry_powder?.current_eur ?? 0) > 0) {
       items.push({
         key: `fire-${p.id}`,
-        label: `🚨 Soltar pólvora de ${p.name} (${p.dry_powder!.current_eur} €) — ${tr.detail}`,
+        label: `🚨 Soltar pólvora de ${p.name} (${Number(p.dry_powder!.current_eur).toFixed(0)} €) — ${tr.detail}`,
       });
     }
   }
@@ -63,11 +63,15 @@ export function MonthlyRoutine({
       signals,
     );
     const saved = new Map((log?.items ?? []).map((i) => [i.key, i]));
-    return built.map((b) => ({
+    const builtKeys = new Set(built.map((b) => b.key));
+    const merged = built.map((b) => ({
       ...b,
       done: saved.get(b.key)?.done ?? false,
       done_at: saved.get(b.key)?.done_at ?? null,
     }));
+    // Pasos guardados que ya no se generan (ej. disparo que dejó de cumplirse): se conservan
+    const leftovers = (log?.items ?? []).filter((i) => !builtKeys.has(i.key));
+    return [...merged, ...leftovers];
   }, [strategies, signals, log]);
 
   const doneCount = items.filter((i) => i.done).length;
