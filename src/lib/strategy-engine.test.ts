@@ -2,10 +2,13 @@ import { describe, it, expect } from "vitest";
 import {
   evaluateBase,
   evaluateTrigger,
+  currentMultiplier,
+  effectiveQuota,
   type LadderRule,
   type SignalMap,
   type MatrixRule,
   type ComboRule,
+  type StrategyPlanLike,
 } from "./strategy-engine";
 
 const sig = (value: number): SignalMap => ({
@@ -108,5 +111,35 @@ describe("combo trigger", () => {
     const r = evaluateTrigger(vixCombo, { vix: { value: 55, date: "2026-06-11", source: "auto" } }, null, NOW);
     expect(r.fired).toBe(false);
     expect(r.blocked).toBe("stale_signal");
+  });
+});
+
+const planLike = (over: Partial<StrategyPlanLike>): StrategyPlanLike => ({
+  amount: 100,
+  multiplier_rules: null,
+  annual_multiplier: 1,
+  annual_multiplier_year: null,
+  ...over,
+});
+
+describe("currentMultiplier / effectiveQuota", () => {
+  it("plan simple → 1 y cuota base", () => {
+    expect(currentMultiplier(planLike({}), {})).toBe(1);
+    expect(effectiveQuota(planLike({}), {})).toBe(100);
+  });
+  it("cadencia annual usa el multiplicador persistido, no la señal", () => {
+    const p = planLike({
+      multiplier_rules: { base: rvLadder },
+      annual_multiplier: 2,
+      annual_multiplier_year: 2026,
+    });
+    expect(currentMultiplier(p, sig(-0.35))).toBe(2); // señal diría 3; vigente es 2
+    expect(effectiveQuota(p, sig(-0.35))).toBe(200);
+  });
+  it("cadencia monthly evalúa on-the-fly", () => {
+    const monthlyLadder = { ...rvLadder, cadence: "monthly" as const };
+    const p = planLike({ multiplier_rules: { base: monthlyLadder } });
+    expect(currentMultiplier(p, sig(-0.25))).toBe(3);
+    expect(effectiveQuota(p, sig(-0.25))).toBe(300);
   });
 });

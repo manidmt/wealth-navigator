@@ -123,3 +123,22 @@ export function evaluateTrigger(
   }
   return { fired: true, blocked: null, detail: `disparo x${rule.multi}` };
 }
+
+// Subconjunto de InvestmentPlan que necesita el motor (evita acoplar al tipo completo del frontend)
+export type StrategyPlanLike = {
+  amount: number | null;
+  multiplier_rules: MultiplierRules | null;
+  annual_multiplier: number;
+  annual_multiplier_year: number | null;
+};
+
+export function currentMultiplier(plan: StrategyPlanLike, signals: SignalMap): number {
+  const base = plan.multiplier_rules?.base;
+  if (!base) return 1;
+  if (base.cadence === "annual") return plan.annual_multiplier;
+  return evaluateBase(base, signals).multi;
+}
+
+export function effectiveQuota(plan: StrategyPlanLike, signals: SignalMap): number {
+  return (plan.amount ?? 0) * currentMultiplier(plan, signals);
+}
