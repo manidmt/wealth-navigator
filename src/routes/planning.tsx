@@ -4,15 +4,7 @@ import { Plus, Pencil, CalendarCheck } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-} from "recharts";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend } from "recharts";
 import { AppShell } from "@/components/app/AppShell";
 import { PageHeader, SectionCard } from "@/components/app/SectionCard";
 import {
@@ -51,6 +43,8 @@ import {
 } from "@/lib/planning-calc";
 import { useDashboard } from "@/hooks/use-dashboard";
 import { formatMonth, euro } from "@/lib/dashboard-data";
+import { StrategyCard } from "@/components/planning/StrategyCard";
+import { useLatestSignals } from "@/lib/signals-api";
 
 export const Route = createFileRoute("/planning")({
   head: () => ({
@@ -96,6 +90,7 @@ type ContributionForm = z.infer<typeof contributionSchema>;
 
 function PlanningPage() {
   const { data: plans = [], isLoading } = useInvestmentPlans();
+  const { data: signals = {} } = useLatestSignals();
   const dashboard = useDashboard();
 
   const [planModalOpen, setPlanModalOpen] = useState(false);
@@ -115,8 +110,8 @@ function PlanningPage() {
   );
 
   const activePlans = plans.filter((p) => p.active);
-  const projectionPlan =
-    plans.find((p) => p.id === selectedPlanId) ?? activePlans[0] ?? null;
+  const strategyPlans = plans.filter((p) => p.asset_class);
+  const projectionPlan = plans.find((p) => p.id === selectedPlanId) ?? activePlans[0] ?? null;
 
   const projectionData = useMemo(() => {
     if (!projectionPlan) return [];
@@ -165,15 +160,26 @@ function PlanningPage() {
           }
         >
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {activePlans.map((plan) => (
-              <PlanCard
+            {strategyPlans.map((plan) => (
+              <StrategyCard
                 key={plan.id}
                 plan={plan}
-                monthlyFinancials={monthlyFinancials}
+                signals={signals}
                 onEdit={() => openEdit(plan)}
-                onContribute={() => setContributionPlan(plan)}
+                onRegister={() => setContributionPlan(plan)}
               />
             ))}
+            {activePlans
+              .filter((p) => !p.asset_class)
+              .map((plan) => (
+                <PlanCard
+                  key={plan.id}
+                  plan={plan}
+                  monthlyFinancials={monthlyFinancials}
+                  onEdit={() => openEdit(plan)}
+                  onContribute={() => setContributionPlan(plan)}
+                />
+              ))}
           </div>
         </SectionCard>
 
@@ -182,10 +188,7 @@ function PlanningPage() {
           <SectionCard title="Proyección">
             <div className="mb-4 flex flex-wrap items-center gap-3">
               {activePlans.length > 1 && (
-                <Select
-                  value={projectionPlan.id}
-                  onValueChange={setSelectedPlanId}
-                >
+                <Select value={projectionPlan.id} onValueChange={setSelectedPlanId}>
                   <SelectTrigger className="w-[200px] text-[13px]">
                     <SelectValue />
                   </SelectTrigger>
@@ -269,10 +272,7 @@ function PlanningPage() {
 
         {/* Historial */}
         {projectionPlan && (
-          <ContributionHistory
-            plan={projectionPlan}
-            monthlyFinancials={monthlyFinancials}
-          />
+          <ContributionHistory plan={projectionPlan} monthlyFinancials={monthlyFinancials} />
         )}
       </div>
 
@@ -314,9 +314,7 @@ function PlanCard({
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   })();
 
-  const currentContrib = contributions.find(
-    (c) => c.date.slice(0, 7) === currentMonth,
-  );
+  const currentContrib = contributions.find((c) => c.date.slice(0, 7) === currentMonth);
 
   const planned = computePlannedAmount(plan, monthlyFinancials, currentMonth);
   const actual = currentContrib?.actual_amount ?? null;
@@ -326,9 +324,7 @@ function PlanCard({
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="truncate text-[13.5px] font-semibold tracking-tight">
-            {plan.name}
-          </div>
+          <div className="truncate text-[13.5px] font-semibold tracking-tight">{plan.name}</div>
           <div className="mt-0.5 truncate text-[11.5px] text-muted-foreground">
             {plan.asset_name}
           </div>
@@ -402,9 +398,7 @@ function ContributionHistory({
       description="Aportaciones planificadas vs reales por mes."
     >
       {contributions.length === 0 ? (
-        <p className="text-[13px] text-muted-foreground">
-          Sin aportaciones registradas aún.
-        </p>
+        <p className="text-[13px] text-muted-foreground">Sin aportaciones registradas aún.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-[12.5px]">
@@ -418,14 +412,11 @@ function ContributionHistory({
             </thead>
             <tbody className="divide-y divide-border">
               {contributions.map((c) => {
-                const dev =
-                  c.actual_amount !== null ? c.actual_amount - c.planned_amount : null;
+                const dev = c.actual_amount !== null ? c.actual_amount - c.planned_amount : null;
                 return (
                   <tr key={c.id}>
                     <td className="py-2 pr-4">{formatMonth(c.date.slice(0, 7))}</td>
-                    <td className="py-2 pr-4 text-right">
-                      {euro.format(c.planned_amount)}
-                    </td>
+                    <td className="py-2 pr-4 text-right">{euro.format(c.planned_amount)}</td>
                     <td className="py-2 pr-4 text-right">
                       {c.actual_amount !== null ? euro.format(c.actual_amount) : "—"}
                     </td>
@@ -433,9 +424,7 @@ function ContributionHistory({
                       {dev !== null ? (
                         <span
                           className={
-                            dev >= 0
-                              ? "text-emerald-600 dark:text-emerald-400"
-                              : "text-red-500"
+                            dev >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"
                           }
                         >
                           {dev >= 0 ? "+" : ""}
@@ -543,14 +532,8 @@ function PlanModal({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1">
               <Label className="text-[12px]">Nombre del plan</Label>
-              <Input
-                {...register("name")}
-                placeholder="DCA MSCI World"
-                className="text-[13px]"
-              />
-              {errors.name && (
-                <p className="text-[11px] text-red-500">{errors.name.message}</p>
-              )}
+              <Input {...register("name")} placeholder="DCA MSCI World" className="text-[13px]" />
+              {errors.name && <p className="text-[11px] text-red-500">{errors.name.message}</p>}
             </div>
             <div className="space-y-1">
               <Label className="text-[12px]">Activo destino</Label>
@@ -568,10 +551,7 @@ function PlanModal({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1">
               <Label className="text-[12px]">Tipo de regla</Label>
-              <Select
-                value={ruleType}
-                onValueChange={(v) => setValue("rule_type", v as RuleType)}
-              >
+              <Select value={ruleType} onValueChange={(v) => setValue("rule_type", v as RuleType)}>
                 <SelectTrigger className="text-[13px]">
                   <SelectValue />
                 </SelectTrigger>
@@ -610,19 +590,12 @@ function PlanModal({
           {(ruleType === "pct_income" || ruleType === "pct_savings") && (
             <div className="space-y-1">
               <Label className="text-[12px]">Porcentaje (%)</Label>
-              <Input
-                type="number"
-                step="0.1"
-                {...register("percentage")}
-                className="text-[13px]"
-              />
+              <Input type="number" step="0.1" {...register("percentage")} className="text-[13px]" />
             </div>
           )}
 
           <div>
-            <Label className="mb-2 block text-[12px]">
-              Rentabilidad anual esperada (%)
-            </Label>
+            <Label className="mb-2 block text-[12px]">Rentabilidad anual esperada (%)</Label>
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1">
                 <Label className="text-[11px] text-muted-foreground">Pesimista</Label>
@@ -661,11 +634,7 @@ function PlanModal({
 
           <div className="space-y-1">
             <Label className="text-[12px]">Notas (opcional)</Label>
-            <Textarea
-              {...register("notes")}
-              rows={2}
-              className="resize-none text-[13px]"
-            />
+            <Textarea {...register("notes")} rows={2} className="resize-none text-[13px]" />
           </div>
 
           <DialogFooter className="gap-2 pt-2">
