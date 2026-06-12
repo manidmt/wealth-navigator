@@ -1,4 +1,5 @@
 import type { InvestmentPlan } from "./planning-api";
+import type { StrategyPlanLike } from "./strategy-engine";
 
 export type MonthlyFinancials = {
   month: string; // "YYYY-MM"
@@ -33,9 +34,7 @@ export function computePlannedAmount(
       ? { income: 0, savings: 0 }
       : {
           income: relevant.reduce((s, m) => s + m.income, 0) / relevant.length,
-          savings:
-            relevant.reduce((s, m) => s + (m.income - m.expense), 0) /
-            relevant.length,
+          savings: relevant.reduce((s, m) => s + (m.income - m.expense), 0) / relevant.length,
         };
 
   const pct = (plan.percentage ?? 0) / 100;
@@ -109,6 +108,17 @@ export function computeProjection(
   }
 
   return points;
+}
+
+/** Adapta una fila de investment_plans (numéricos como string vía PostgREST) al shape del motor. */
+export function toEnginePlan(plan: InvestmentPlan): StrategyPlanLike {
+  return {
+    amount: plan.amount == null ? null : Number(plan.amount),
+    multiplier_rules: plan.multiplier_rules,
+    annual_multiplier: Number(plan.annual_multiplier ?? 1),
+    annual_multiplier_year:
+      plan.annual_multiplier_year == null ? null : Number(plan.annual_multiplier_year),
+  };
 }
 
 /** Formatea la regla de un plan para mostrar en la UI */

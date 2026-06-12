@@ -39,6 +39,7 @@ import {
   computePlannedAmount,
   computeProjection,
   formatRule,
+  toEnginePlan,
   type MonthlyFinancials,
 } from "@/lib/planning-calc";
 import { useDashboard } from "@/hooks/use-dashboard";
@@ -709,13 +710,7 @@ function ContributionModal({
 
   const strategyQuota = useMemo(() => {
     if (!isStrategy) return 0;
-    const enginePlan = {
-      amount: plan.amount == null ? null : Number(plan.amount),
-      multiplier_rules: plan.multiplier_rules,
-      annual_multiplier: Number(plan.annual_multiplier ?? 1),
-      annual_multiplier_year:
-        plan.annual_multiplier_year == null ? null : Number(plan.annual_multiplier_year),
-    };
+    const enginePlan = toEnginePlan(plan);
     return effectiveQuota(enginePlan, signals);
   }, [isStrategy, plan, signals]);
 

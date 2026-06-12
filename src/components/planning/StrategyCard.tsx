@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Flame, Pencil } from "lucide-react";
 import type { InvestmentPlan } from "@/lib/planning-api";
 import { useFireDryPowder } from "@/lib/planning-api";
+import { toEnginePlan } from "@/lib/planning-calc";
 import {
   currentMultiplier,
   effectiveQuota,
@@ -30,13 +31,7 @@ export function StrategyCard({
 }) {
   const fire = useFireDryPowder();
 
-  const enginePlan = {
-    amount: plan.amount == null ? null : Number(plan.amount),
-    multiplier_rules: plan.multiplier_rules,
-    annual_multiplier: Number(plan.annual_multiplier ?? 1),
-    annual_multiplier_year:
-      plan.annual_multiplier_year == null ? null : Number(plan.annual_multiplier_year),
-  };
+  const enginePlan = toEnginePlan(plan);
 
   const multi = currentMultiplier(enginePlan, signals);
   const quota = effectiveQuota(enginePlan, signals);
@@ -72,9 +67,9 @@ export function StrategyCard({
       {plan.dry_powder && (
         <div className="mt-2 flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-[12px]">
           <span>
-            Pólvora: <b>{plan.dry_powder.current_eur.toFixed(0)} €</b>
+            Pólvora: <b>{Number(plan.dry_powder.current_eur).toFixed(0)} €</b>
             {plan.dry_powder.monthly_feed_eur > 0 &&
-              ` (+${plan.dry_powder.monthly_feed_eur} €/mes)`}
+              ` (+${Number(plan.dry_powder.monthly_feed_eur).toFixed(0)} €/mes)`}
           </span>
           {tr.fired && plan.dry_powder.current_eur > 0 && (
             <Button

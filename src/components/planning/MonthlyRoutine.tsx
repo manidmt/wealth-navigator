@@ -3,6 +3,7 @@ import { SectionCard } from "@/components/app/SectionCard";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { InvestmentPlan, RoutineItem } from "@/lib/planning-api";
 import { useRoutineLog, useUpsertRoutineLog } from "@/lib/planning-api";
+import { toEnginePlan } from "@/lib/planning-calc";
 import { effectiveQuota, evaluateTrigger, type SignalMap } from "@/lib/strategy-engine";
 
 function buildItems(
@@ -11,13 +12,7 @@ function buildItems(
 ): Omit<RoutineItem, "done" | "done_at">[] {
   const items: Omit<RoutineItem, "done" | "done_at">[] = [];
   for (const p of strategies) {
-    const enginePlan = {
-      amount: p.amount == null ? null : Number(p.amount),
-      multiplier_rules: p.multiplier_rules,
-      annual_multiplier: Number(p.annual_multiplier ?? 1),
-      annual_multiplier_year:
-        p.annual_multiplier_year == null ? null : Number(p.annual_multiplier_year),
-    };
+    const enginePlan = toEnginePlan(p);
     items.push({
       key: `buy-${p.id}`,
       label: `Aportar ${effectiveQuota(enginePlan, signals).toFixed(0)} € a ${p.name}`,
