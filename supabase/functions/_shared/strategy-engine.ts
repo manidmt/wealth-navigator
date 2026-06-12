@@ -78,3 +78,48 @@ export function evaluateBase(rule: LadderRule | MatrixRule | undefined, signals:
   multi = Math.min(multi, rule.max);
   return { multi, detail };
 }
+
+export type TriggerResult = {
+  fired: boolean;
+  blocked: "cooldown" | "stale_signal" | null;
+  detail: string;
+};
+
+const OPS = {
+  gt: (a: number, b: number) => a > b,
+  gte: (a: number, b: number) => a >= b,
+  lt: (a: number, b: number) => a < b,
+  lte: (a: number, b: number) => a <= b,
+};
+
+export function evaluateTrigger(
+  rule: ComboRule | undefined,
+  signals: SignalMap,
+  lastFiredAt: string | null,
+  now: Date = new Date(),
+): TriggerResult {
+  if (!rule) return { fired: false, blocked: null, detail: "sin trigger" };
+
+  for (const c of rule.conditions) {
+    const s = signals[c.signal];
+    if (!s) return { fired: false, blocked: "stale_signal", detail: `${c.signal}: sin dato` };
+    if (isStale(s, now)) return { fired: false, blocked: "stale_signal", detail: `${c.signal}: caducada (${s.date})` };
+  }
+
+  const met = rule.conditions.every((c) => OPS[c.op](signals[c.signal]!.value, c.value));
+  if (!met) {
+    const detail = rule.conditions
+      .map((c) => `${c.signal}=${signals[c.signal]!.value} ${OPS[c.op](signals[c.signal]!.value, c.value) ? "✓" : "✗"}`)
+      .join(" · ");
+    return { fired: false, blocked: null, detail };
+  }
+
+  if (lastFiredAt) {
+    const last = new Date(lastFiredAt);
+    const months = (now.getFullYear() - last.getFullYear()) * 12 + (now.getMonth() - last.getMonth());
+    if (months < rule.cooldown_months) {
+      return { fired: false, blocked: "cooldown", detail: `cooldown hasta ${rule.cooldown_months - months} meses más` };
+    }
+  }
+  return { fired: true, blocked: null, detail: `disparo x${rule.multi}` };
+}

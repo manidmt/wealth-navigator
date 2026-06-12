@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { evaluateBase, type LadderRule, type SignalMap, type MatrixRule } from "./strategy-engine";
+import {
+  evaluateBase,
+  evaluateTrigger,
+  type LadderRule,
+  type SignalMap,
+  type MatrixRule,
+  type ComboRule,
+} from "./strategy-engine";
 
 const sig = (value: number): SignalMap => ({
   msci_dd: { value, date: "2026-06-01", source: "auto" },
@@ -59,4 +66,47 @@ describe("matrix rule (oro TIPS×DXY)", () => {
   it("clamp max: tips -0.2, dxy 125, dd -16% → 6", () =>
     expect(evaluateBase(goldMatrix, goldSig(-0.2, 125, -0.16)).multi).toBe(6));
   it("señal ausente → 1", () => expect(evaluateBase(goldMatrix, {}).multi).toBe(1));
+});
+
+const vixCombo: ComboRule = {
+  type: "combo",
+  conditions: [
+    { signal: "vix", op: "gt", value: 50 },
+    { signal: "insiders_ratio", op: "gte", value: 0.5 },
+  ],
+  multi: 4,
+  cooldown_months: 3,
+};
+
+const NOW = new Date("2026-06-12");
+const comboSig = (vix: number, ins: number, insDate = "2026-06-01"): SignalMap => ({
+  vix: { value: vix, date: "2026-06-11", source: "auto" },
+  insiders_ratio: { value: ins, date: insDate, source: "manual" },
+});
+
+describe("combo trigger", () => {
+  it("dispara si todas se cumplen", () => {
+    const r = evaluateTrigger(vixCombo, comboSig(55, 0.6), null, NOW);
+    expect(r.fired).toBe(true);
+    expect(r.blocked).toBeNull();
+  });
+  it("no dispara si falta una condición", () =>
+    expect(evaluateTrigger(vixCombo, comboSig(49, 0.6), null, NOW).fired).toBe(false));
+  it("cooldown bloquea (<3 meses)", () => {
+    const r = evaluateTrigger(vixCombo, comboSig(55, 0.6), "2026-05-01", NOW);
+    expect(r.fired).toBe(false);
+    expect(r.blocked).toBe("cooldown");
+  });
+  it("cooldown expirado no bloquea", () =>
+    expect(evaluateTrigger(vixCombo, comboSig(55, 0.6), "2026-02-12", NOW).fired).toBe(true));
+  it("señal manual caducada (>35d) bloquea", () => {
+    const r = evaluateTrigger(vixCombo, comboSig(55, 0.6, "2026-04-20"), null, NOW);
+    expect(r.fired).toBe(false);
+    expect(r.blocked).toBe("stale_signal");
+  });
+  it("señal ausente bloquea como stale", () => {
+    const r = evaluateTrigger(vixCombo, { vix: { value: 55, date: "2026-06-11", source: "auto" } }, null, NOW);
+    expect(r.fired).toBe(false);
+    expect(r.blocked).toBe("stale_signal");
+  });
 });
