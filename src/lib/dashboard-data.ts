@@ -192,29 +192,38 @@ function computeDashboard(movements: any[], positions: any[], snapshots: any[]):
     : (months[months.length - 1] ?? currentCalendarMonth);
 
   // Current month (always live, never requires a manual close).
-  // Net worth = last month's net worth + current savings + portfolio price delta since last snapshot.
-  const lastEntry = series.length > 0 ? series[series.length - 1] : null;
+  // Net worth = last closed month's NW + current savings + portfolio value delta.
   const currentMovEntry = byMonthMap.get(currentCalendarMonth);
   const currentSavings = currentMovEntry ? currentMovEntry.income - currentMovEntry.expense : 0;
   const snapPortfolioValue = latestSnap ? Number(latestSnap.portfolio_value ?? 0) : 0;
-  const portfolioDelta = latestSnap && snapPortfolioValue > 0 ? totalPortfolio - snapPortfolioValue : 0;
-  const baseLiabilities = lastEntry ? lastEntry.liabilities : 0;
+  // When no snapshot tracks portfolio_value, add the full portfolio (no prior baseline to delta against).
+  const portfolioDelta = latestSnap && snapPortfolioValue > 0
+    ? totalPortfolio - snapPortfolioValue
+    : totalPortfolio;
+  // Use the last *closed* month (before current calendar month) as the NW base.
+  const prevClosedEntry = [...series].reverse().find((s) => s.month < currentCalendarMonth) ?? null;
+  const baseNW = prevClosedEntry ? prevClosedEntry.netWorth : 0;
+  const baseLiabilities = prevClosedEntry ? prevClosedEntry.liabilities : 0;
+  const liveNW = baseNW + currentSavings + portfolioDelta;
 
-  // If currentCalendarMonth is already in series (snapshot exists), use it; otherwise compute live.
-  if (!series.some((s) => s.month === currentCalendarMonth)) {
-    const baseNW = lastEntry ? lastEntry.netWorth : 0;
-    const liveNW = baseNW + currentSavings + portfolioDelta;
-    series.push({
-      month: currentCalendarMonth,
-      assets: liveNW - baseLiabilities,
-      liabilities: baseLiabilities,
-      netWorth: liveNW,
-      savings: currentSavings,
-    });
+  // Always write a live entry for the current month (overrides any estimate from the series loop).
+  const liveEntryData = {
+    month: currentCalendarMonth,
+    assets: liveNW - baseLiabilities,
+    liabilities: baseLiabilities,
+    netWorth: liveNW,
+    savings: currentSavings,
+  };
+  const existingIdx = series.findIndex((s) => s.month === currentCalendarMonth);
+  if (existingIdx >= 0) {
+    series[existingIdx] = liveEntryData;
+  } else {
+    series.push(liveEntryData);
   }
 
   const liveEntry = series.find((s) => s.month === currentCalendarMonth)!;
-  const prevEntry = series.length > 1 ? series[series.length - 2] : null;
+  const liveIdx = series.findIndex((s) => s.month === currentCalendarMonth);
+  const prevEntry = liveIdx > 0 ? series[liveIdx - 1] : null;
   const monthlyChange = prevEntry ? liveEntry.netWorth - prevEntry.netWorth : currentSavings;
 
   const currentMonthCats = currentMovEntry

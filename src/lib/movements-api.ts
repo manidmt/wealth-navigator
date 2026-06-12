@@ -58,11 +58,13 @@ export function useMonthMovements(month: string | null) {
     queryKey: ["month-movements", month, user?.id],
     queryFn: async () => {
       if (!month) return [];
+      const [y, mo] = month.split("-").map(Number);
+      const nextMonth = mo === 12 ? `${y + 1}-01-01` : `${y}-${String(mo + 1).padStart(2, "0")}-01`;
       const { data, error } = await supabase
         .from("movements")
         .select("id, type, date, category, description, amount, currency")
         .gte("date", `${month}-01`)
-        .lte("date", `${month}-31`)
+        .lt("date", nextMonth)
         .order("date", { ascending: false });
       if (error) throw error;
       return (data ?? []).map(rowToRecord);
