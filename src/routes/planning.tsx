@@ -44,7 +44,12 @@ import {
 import { useDashboard } from "@/hooks/use-dashboard";
 import { formatMonth, euro } from "@/lib/dashboard-data";
 import { StrategyCard } from "@/components/planning/StrategyCard";
+import { JanuaryWizard } from "@/components/planning/JanuaryWizard";
+import { MonthlyRoutine } from "@/components/planning/MonthlyRoutine";
+import { ContributionLog } from "@/components/planning/ContributionLog";
+import { SignalsPanel } from "@/components/planning/SignalsPanel";
 import { useLatestSignals } from "@/lib/signals-api";
+import { effectiveQuota, type SignalMap } from "@/lib/strategy-engine";
 
 export const Route = createFileRoute("/planning")({
   head: () => ({
@@ -82,6 +87,8 @@ type PlanForm = z.infer<typeof planSchema>;
 const contributionSchema = z.object({
   date: z.string().min(1, "Requerido"),
   actual_amount: z.coerce.number().min(0),
+  price: z.coerce.number().positive().optional(),
+  multiplier: z.coerce.number().positive().optional(),
 });
 
 type ContributionForm = z.infer<typeof contributionSchema>;
@@ -148,6 +155,9 @@ function PlanningPage() {
       />
 
       <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8 md:px-8">
+        {/* Calibración anual (solo si hay estrategias pendientes) */}
+        <JanuaryWizard strategies={strategyPlans} signals={signals} />
+
         {/* Mis planes */}
         <SectionCard
           title="Mis planes"
@@ -182,6 +192,9 @@ function PlanningPage() {
               ))}
           </div>
         </SectionCard>
+
+        {/* Rutina mensual */}
+        <MonthlyRoutine strategies={strategyPlans} signals={signals} />
 
         {/* Proyección */}
         {projectionPlan && (
@@ -270,10 +283,16 @@ function PlanningPage() {
           </SectionCard>
         )}
 
-        {/* Historial */}
-        {projectionPlan && (
-          <ContributionHistory plan={projectionPlan} monthlyFinancials={monthlyFinancials} />
-        )}
+        {/* Historial / Log de aportaciones */}
+        {projectionPlan &&
+          (projectionPlan.asset_class ? (
+            <ContributionLog plan={projectionPlan} />
+          ) : (
+            <ContributionHistory plan={projectionPlan} monthlyFinancials={monthlyFinancials} />
+          ))}
+
+        {/* Señales de mercado */}
+        <SignalsPanel />
       </div>
 
       <PlanModal
@@ -288,6 +307,7 @@ function PlanningPage() {
           onClose={() => setContributionPlan(null)}
           plan={contributionPlan}
           monthlyFinancials={monthlyFinancials}
+          signals={signals}
         />
       )}
     </AppShell>
@@ -675,13 +695,29 @@ function ContributionModal({
   onClose,
   plan,
   monthlyFinancials,
+  signals,
 }: {
   open: boolean;
   onClose: () => void;
   plan: InvestmentPlan;
   monthlyFinancials: MonthlyFinancials[];
+  signals: SignalMap;
 }) {
   const upsert = useUpsertContribution();
+
+  const isStrategy = !!plan.asset_class;
+
+  const strategyQuota = useMemo(() => {
+    if (!isStrategy) return 0;
+    const enginePlan = {
+      amount: plan.amount == null ? null : Number(plan.amount),
+      multiplier_rules: plan.multiplier_rules,
+      annual_multiplier: Number(plan.annual_multiplier ?? 1),
+      annual_multiplier_year:
+        plan.annual_multiplier_year == null ? null : Number(plan.annual_multiplier_year),
+    };
+    return effectiveQuota(enginePlan, signals);
+  }, [isStrategy, plan, signals]);
 
   const {
     register,
@@ -692,13 +728,13 @@ function ContributionModal({
     resolver: zodResolver(contributionSchema),
     defaultValues: {
       date: new Date().toISOString().slice(0, 7),
-      actual_amount: 0,
+      actual_amount: isStrategy ? strategyQuota : 0,
     },
   });
 
   const dateValue = watch("date");
   const month = dateValue?.slice(0, 7) ?? "";
-  const planned = computePlannedAmount(plan, monthlyFinancials, month);
+  const planned = isStrategy ? strategyQuota : computePlannedAmount(plan, monthlyFinancials, month);
 
   async function onSubmit(values: ContributionForm) {
     await upsert.mutateAsync({
@@ -706,6 +742,9 @@ function ContributionModal({
       date: values.date + "-01",
       planned_amount: planned,
       actual_amount: values.actual_amount,
+      price: values.price ?? null,
+      units: values.price ? values.actual_amount / values.price : null,
+      multiplier: values.multiplier ?? null,
     });
     onClose();
   }
@@ -729,9 +768,11 @@ function ContributionModal({
             <Input type="month" {...register("date")} className="text-[13px]" />
           </div>
 
-          {plan.rule_type !== "event" && month && (
+          {(isStrategy || (plan.rule_type !== "event" && month)) && (
             <div className="rounded-md bg-muted/40 px-3 py-2 text-[12px]">
-              <span className="text-muted-foreground">Planificado: </span>
+              <span className="text-muted-foreground">
+                {isStrategy ? "Cuota efectiva: " : "Planificado: "}
+              </span>
               <span className="font-medium">{euro.format(planned)}</span>
             </div>
           )}
@@ -744,6 +785,16 @@ function ContributionModal({
               {...register("actual_amount")}
               className="text-[13px]"
             />
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-[12px]">Precio de compra (opcional)</Label>
+            <Input type="number" step="any" {...register("price")} className="text-[13px]" />
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-[12px]">Multiplicador aplicado (opcional)</Label>
+            <Input type="number" step="any" {...register("multiplier")} className="text-[13px]" />
           </div>
 
           <DialogFooter className="gap-2">
