@@ -14,12 +14,21 @@ import { useMoney } from "@/components/app/CurrencyProvider";
 import { EXPENSE_TAGS, tagSeries } from "@/lib/expense-tags";
 import { formatMonth, type ExpenseMonth } from "@/lib/dashboard-data";
 import { useDashboard } from "@/hooks/use-dashboard";
+import {
+  useMonthMovements,
+  useDeleteMovement,
+  useUpdateMovement,
+  type MovementRecord,
+} from "@/lib/movements-api";
 
 export const Route = createFileRoute("/expenses")({
   head: () => ({
     meta: [
       { title: "Gastos mensuales — Wealth OS" },
-      { name: "description", content: "Resumen mensual de ingresos y gastos por categoría con histórico." },
+      {
+        name: "description",
+        content: "Resumen mensual de ingresos y gastos por categoría con histórico.",
+      },
     ],
   }),
   component: ExpensesPage,
@@ -78,9 +87,13 @@ function ExpensesBody() {
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
 
   const months = slice(data.expenses.byMonth);
-  const current = months[months.length - 1] ?? data.expenses.byMonth[data.expenses.byMonth.length - 1];
+  const current =
+    months[months.length - 1] ?? data.expenses.byMonth[data.expenses.byMonth.length - 1];
   const base = baseline(data.expenses.byMonth) ?? months[0];
-  const expenseDelta = base && base.expenseTotal > 0 ? (current.expenseTotal - base.expenseTotal) / base.expenseTotal : 0;
+  const expenseDelta =
+    base && base.expenseTotal > 0
+      ? (current.expenseTotal - base.expenseTotal) / base.expenseTotal
+      : 0;
   const netDelta = current.net - (base?.net ?? 0);
   const compareLabel =
     compare === "prev"
@@ -98,6 +111,8 @@ function ExpensesBody() {
 
   return (
     <div className="space-y-10 px-4 py-8 md:px-8">
+      <DuplicateReviewSection month={data.expenses.currentMonth} />
+
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
           label="Gasto del mes"
@@ -193,11 +208,21 @@ function ExpensesBody() {
                     className="cursor-pointer transition hover:bg-muted/40"
                   >
                     <td className="px-4 py-3 font-medium">{formatMonth(m.month)}</td>
-                    <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{money.format1(m.incomeTotal)}</td>
-                    <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{money.format1(m.expenseTotal)}</td>
-                    <td className="px-4 py-3 text-right tabular-nums font-medium">{money.format1(m.net)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
+                      {money.format1(m.incomeTotal)}
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
+                      {money.format1(m.expenseTotal)}
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums font-medium">
+                      {money.format1(m.net)}
+                    </td>
                     <td className="px-4 py-3 text-right">
-                      {next ? <DeltaBadge value={delta} /> : <span className="text-muted-foreground">—</span>}
+                      {next ? (
+                        <DeltaBadge value={delta} />
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </td>
                   </tr>
                 );
@@ -216,6 +241,87 @@ function ExpensesBody() {
   );
 }
 
+function DuplicateReviewSection({ month }: { month: string }) {
+  const money = useMoney();
+  const { data: movements } = useMonthMovements(month);
+  const deleteMovement = useDeleteMovement();
+  const updateMovement = useUpdateMovement();
+
+  const duplicates = (movements ?? []).filter(
+    (m): m is MovementRecord & { duplicate_of: string } => !!m.duplicate_of,
+  );
+
+  if (duplicates.length === 0) return null;
+
+  return (
+    <section>
+      <SectionLabel>Revisar duplicados</SectionLabel>
+      <SectionCard
+        title="Posibles duplicados"
+        description="Movimientos importados que parecen coincidir con un gasto o ingreso ya registrado a mano."
+      >
+        <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+          {duplicates.map((row) => (
+            <div
+              key={row.id}
+              className={`flex flex-wrap items-center gap-3 px-4 py-3 text-[13px] ${
+                row.excluded ? "opacity-60" : ""
+              }`}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline gap-2">
+                  <span className="font-medium text-foreground">{row.category}</span>
+                  {row.description ? (
+                    <span className="truncate text-[11.5px] text-muted-foreground">
+                      {row.description}
+                    </span>
+                  ) : null}
+                  {row.excluded ? (
+                    <span className="rounded-full border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                      No cuenta
+                    </span>
+                  ) : null}
+                </div>
+                <div className="mt-0.5 text-[11px] text-muted-foreground">{row.date}</div>
+              </div>
+              <span
+                className={`shrink-0 tabular-nums font-medium ${
+                  row.type === "income" ? "text-positive" : "text-foreground"
+                }`}
+              >
+                {row.type === "income" ? "+" : "−"}
+                {money.format1(row.amount)}
+              </span>
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => deleteMovement.mutate({ id: row.id, month: row.month })}
+                  className="rounded-md border border-border bg-card px-2.5 py-1.5 text-[12px] font-medium text-foreground/80 transition hover:border-destructive/40 hover:text-destructive"
+                >
+                  Borrar importado
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateMovement.mutate({
+                      id: row.id,
+                      month: row.month,
+                      duplicate_of: null,
+                      excluded: false,
+                    })
+                  }
+                  className="rounded-md border border-border bg-card px-2.5 py-1.5 text-[12px] font-medium text-foreground/80 transition hover:border-border-strong hover:text-foreground"
+                >
+                  No es duplicado
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+    </section>
+  );
+}
 
 function TagTrendGrid({ months }: { months: ExpenseMonth[] }) {
   const money = useMoney();
@@ -227,10 +333,7 @@ function TagTrendGrid({ months }: { months: ExpenseMonth[] }) {
         const first = series[0] ?? 0;
         const delta = first > 0 ? (last - first) / first : 0;
         return (
-          <li
-            key={t.key}
-            className="rounded-lg border border-border bg-card p-3"
-          >
+          <li key={t.key} className="rounded-lg border border-border bg-card p-3">
             <div className="flex items-center justify-between gap-2">
               <span className="flex items-center gap-2 text-[12.5px] font-medium text-foreground">
                 <span
@@ -249,9 +352,7 @@ function TagTrendGrid({ months }: { months: ExpenseMonth[] }) {
                       : "text-[11.5px] font-medium tabular-nums text-muted-foreground"
                 }
               >
-                {delta === 0
-                  ? "—"
-                  : `${delta > 0 ? "+" : ""}${(delta * 100).toFixed(1)}%`}
+                {delta === 0 ? "—" : `${delta > 0 ? "+" : ""}${(delta * 100).toFixed(1)}%`}
               </span>
             </div>
             <div className="mt-1 text-[11px] text-muted-foreground tabular-nums">
@@ -266,4 +367,3 @@ function TagTrendGrid({ months }: { months: ExpenseMonth[] }) {
     </ul>
   );
 }
-

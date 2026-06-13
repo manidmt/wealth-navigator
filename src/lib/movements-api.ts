@@ -29,16 +29,39 @@ export type CreateMovementInput = {
 };
 
 export const EXPENSE_CATEGORIES = [
-  "Café", "Coche", "Comer fuera", "Comida", "Cuidado personal",
-  "Deporte", "Educación", "Formación", "Gestiones", "Gimnasio",
-  "Higiene", "Hogar", "Impuestos", "Ocio", "Otro",
-  "Regalo", "Ropa", "Salud", "Suplementos", "Suscripciones",
-  "Tecnología", "Transporte", "Viaje",
+  "Café",
+  "Coche",
+  "Comer fuera",
+  "Comida",
+  "Cuidado personal",
+  "Deporte",
+  "Educación",
+  "Formación",
+  "Gestiones",
+  "Gimnasio",
+  "Higiene",
+  "Hogar",
+  "Impuestos",
+  "Ocio",
+  "Otro",
+  "Regalo",
+  "Ropa",
+  "Salud",
+  "Suplementos",
+  "Suscripciones",
+  "Tecnología",
+  "Transporte",
+  "Viaje",
 ];
 
 export const INCOME_CATEGORIES = [
-  "Nómina", "Salario", "Extra", "Tarjeta Restaurante",
-  "Ticket restaurante", "Comer fuera", "Otros ingresos",
+  "Nómina",
+  "Salario",
+  "Extra",
+  "Tarjeta Restaurante",
+  "Ticket restaurante",
+  "Comer fuera",
+  "Otros ingresos",
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -127,6 +150,8 @@ export function useUpdateMovement() {
           ...(patch.description !== undefined && { description: patch.description ?? null }),
           ...(patch.amount !== undefined && { amount: patch.amount }),
           ...(patch.currency !== undefined && { currency: patch.currency }),
+          ...(patch.excluded !== undefined && { excluded: patch.excluded }),
+          ...(patch.duplicate_of !== undefined && { duplicate_of: patch.duplicate_of }),
         })
         .eq("id", id)
         .select()
@@ -143,7 +168,14 @@ export function useUpdateMovement() {
 
 export type BulkImportResult = { inserted: number; skipped: number };
 
-type BulkRow = { type: MovementType; date: string; description: string; amount: number; currency: string; external_id: string };
+type BulkRow = {
+  type: MovementType;
+  date: string;
+  description: string;
+  amount: number;
+  currency: string;
+  external_id: string;
+};
 
 export function useBulkImportMovements() {
   const qc = useQueryClient();

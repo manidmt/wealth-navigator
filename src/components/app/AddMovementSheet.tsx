@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -52,6 +53,7 @@ export function AddMovementSheet({ open, onOpenChange, movement, defaultMonth }:
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
+  const [excluded, setExcluded] = useState(false);
 
   const createMovement = useCreateMovement();
   const updateMovement = useUpdateMovement();
@@ -66,16 +68,14 @@ export function AddMovementSheet({ open, onOpenChange, movement, defaultMonth }:
       setCategory(movement.category);
       setDescription(movement.description ?? "");
       setAmount(String(movement.amount));
+      setExcluded(movement.excluded ?? false);
     } else {
       setType("expense");
-      setDate(
-        defaultMonth
-          ? `${defaultMonth}-${todayStr().slice(8)}`
-          : todayStr(),
-      );
+      setDate(defaultMonth ? `${defaultMonth}-${todayStr().slice(8)}` : todayStr());
       setCategory("");
       setDescription("");
       setAmount("");
+      setExcluded(false);
     }
   }, [open, movement, defaultMonth]);
 
@@ -87,6 +87,7 @@ export function AddMovementSheet({ open, onOpenChange, movement, defaultMonth }:
     setCategory("");
     setDescription("");
     setAmount("");
+    setExcluded(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -104,6 +105,7 @@ export function AddMovementSheet({ open, onOpenChange, movement, defaultMonth }:
         description: description.trim() || undefined,
         amount: parsed,
         currency: movement.currency || "EUR",
+        excluded,
       });
     } else {
       await createMovement.mutateAsync({
@@ -113,6 +115,7 @@ export function AddMovementSheet({ open, onOpenChange, movement, defaultMonth }:
         description: description.trim() || undefined,
         amount: parsed,
         currency: "EUR",
+        excluded,
       });
     }
 
@@ -137,11 +140,11 @@ export function AddMovementSheet({ open, onOpenChange, movement, defaultMonth }:
           <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
             {isEdit ? "Editar movimiento" : "Nuevo movimiento"}
           </div>
-          <SheetTitle className="font-display text-2xl tracking-tight">
-            {title}
-          </SheetTitle>
+          <SheetTitle className="font-display text-2xl tracking-tight">{title}</SheetTitle>
           <SheetDescription className="sr-only">
-            {isEdit ? "Formulario para editar un movimiento" : "Formulario para añadir un gasto o ingreso"}
+            {isEdit
+              ? "Formulario para editar un movimiento"
+              : "Formulario para añadir un gasto o ingreso"}
           </SheetDescription>
         </SheetHeader>
 
@@ -203,8 +206,7 @@ export function AddMovementSheet({ open, onOpenChange, movement, defaultMonth }:
 
           <div className="space-y-1.5">
             <Label htmlFor="mov-desc" className="text-[12px]">
-              Descripción{" "}
-              <span className="text-muted-foreground">(opcional)</span>
+              Descripción <span className="text-muted-foreground">(opcional)</span>
             </Label>
             <Input
               id="mov-desc"
@@ -238,6 +240,23 @@ export function AddMovementSheet({ open, onOpenChange, movement, defaultMonth }:
             </div>
           </div>
 
+          <div className="flex items-start justify-between gap-3 rounded-lg border border-border bg-muted/30 p-3">
+            <div className="space-y-0.5">
+              <Label htmlFor="mov-excluded" className="text-[12px]">
+                No contabilizar
+              </Label>
+              <p className="text-[11.5px] leading-snug text-muted-foreground">
+                El movimiento no suma en los totales (p.ej. traspaso entre cuentas propias).
+              </p>
+            </div>
+            <Switch
+              id="mov-excluded"
+              checked={excluded}
+              onCheckedChange={setExcluded}
+              className="mt-0.5 shrink-0"
+            />
+          </div>
+
           <div className="flex items-center justify-between gap-3 pt-2">
             <button
               type="button"
@@ -254,18 +273,12 @@ export function AddMovementSheet({ open, onOpenChange, movement, defaultMonth }:
               disabled={isPending || !category || !amount}
               className="min-w-[100px]"
             >
-              {isPending
-                ? "Guardando…"
-                : isEdit
-                  ? "Guardar cambios"
-                  : "Guardar"}
+              {isPending ? "Guardando…" : isEdit ? "Guardar cambios" : "Guardar"}
             </Button>
           </div>
 
           {(createMovement.isError || updateMovement.isError) && (
-            <p className="text-[12px] text-destructive">
-              Error al guardar. Inténtalo de nuevo.
-            </p>
+            <p className="text-[12px] text-destructive">Error al guardar. Inténtalo de nuevo.</p>
           )}
         </form>
       </SheetContent>
