@@ -1,4 +1,4 @@
-import { categorize } from "./categorize.ts";
+import { categoryFromMcc } from "./mcc-categories.ts";
 
 export type EbTransaction = {
   transaction_amount: { amount: string; currency: string };
@@ -9,6 +9,7 @@ export type EbTransaction = {
   transaction_date?: string;
   transaction_id?: string;
   entry_reference?: string;
+  merchant_category_code?: string | null;
   remittance_information?: string[];
   creditor?: { name?: string };
   debtor?: { name?: string };
@@ -45,7 +46,7 @@ export function mapTransaction(tx: EbTransaction, userId: string): MovementRow {
     amount,
     currency: tx.transaction_amount.currency,
     description,
-    category: categorize(description, type),
+    category: categoryFromMcc(tx.merchant_category_code) ?? "Sin categoría",
     external_id: (tx.transaction_id ?? tx.entry_reference) as string,
   };
 }
