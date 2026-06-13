@@ -77,7 +77,7 @@ serve(async (req) => {
         }
       }
       await supabase.from("bank_connections")
-        .update({ last_synced_at: new Date().toISOString(), error_message: null })
+        .update({ last_synced_at: new Date().toISOString() })
         .eq("id", conn.id);
     }
     return corsResponse({ ok: true, synced: (connections ?? []).length, inserted });

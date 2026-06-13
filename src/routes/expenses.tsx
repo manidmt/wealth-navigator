@@ -253,6 +253,21 @@ function DuplicateReviewSection({ month }: { month: string }) {
 
   if (duplicates.length === 0) return null;
 
+  const handleDeleteManual = (manualId: string, imported: MovementRecord) => {
+    deleteMovement.mutate(
+      { id: manualId, month: imported.month },
+      {
+        onSuccess: () =>
+          updateMovement.mutate({
+            id: imported.id,
+            month: imported.month,
+            duplicate_of: null,
+            excluded: false,
+          }),
+      },
+    );
+  };
+
   return (
     <section>
       <SectionLabel>Revisar duplicados</SectionLabel>
@@ -261,62 +276,111 @@ function DuplicateReviewSection({ month }: { month: string }) {
         description="Movimientos importados que parecen coincidir con un gasto o ingreso ya registrado a mano."
       >
         <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
-          {duplicates.map((row) => (
-            <div
-              key={row.id}
-              className={`flex flex-wrap items-center gap-3 px-4 py-3 text-[13px] ${
-                row.excluded ? "opacity-60" : ""
-              }`}
-            >
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline gap-2">
-                  <span className="font-medium text-foreground">{row.category}</span>
-                  {row.description ? (
-                    <span className="truncate text-[11.5px] text-muted-foreground">
-                      {row.description}
-                    </span>
-                  ) : null}
-                  {row.excluded ? (
-                    <span className="rounded-full border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                      No cuenta
-                    </span>
-                  ) : null}
-                </div>
-                <div className="mt-0.5 text-[11px] text-muted-foreground">{row.date}</div>
-              </div>
-              <span
-                className={`shrink-0 tabular-nums font-medium ${
-                  row.type === "income" ? "text-positive" : "text-foreground"
+          {duplicates.map((row) => {
+            const manual = (movements ?? []).find((m) => m.id === row.duplicate_of);
+            return (
+              <div
+                key={row.id}
+                className={`flex flex-wrap items-center gap-3 px-4 py-3 text-[13px] ${
+                  row.excluded ? "opacity-60" : ""
                 }`}
               >
-                {row.type === "income" ? "+" : "−"}
-                {money.format1(row.amount)}
-              </span>
-              <div className="flex shrink-0 items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => deleteMovement.mutate({ id: row.id, month: row.month })}
-                  className="rounded-md border border-border bg-card px-2.5 py-1.5 text-[12px] font-medium text-foreground/80 transition hover:border-destructive/40 hover:text-destructive"
-                >
-                  Borrar importado
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    updateMovement.mutate({
-                      id: row.id,
-                      month: row.month,
-                      duplicate_of: null,
-                      excluded: false,
-                    })
-                  }
-                  className="rounded-md border border-border bg-card px-2.5 py-1.5 text-[12px] font-medium text-foreground/80 transition hover:border-border-strong hover:text-foreground"
-                >
-                  No es duplicado
-                </button>
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="rounded-full border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                        Importado
+                      </span>
+                      <span className="font-medium text-foreground">{row.category}</span>
+                      {row.description ? (
+                        <span className="truncate text-[11.5px] text-muted-foreground">
+                          {row.description}
+                        </span>
+                      ) : null}
+                      {row.excluded ? (
+                        <span className="rounded-full border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                          No cuenta
+                        </span>
+                      ) : null}
+                      <span
+                        className={`shrink-0 tabular-nums font-medium ${
+                          row.type === "income" ? "text-positive" : "text-foreground"
+                        }`}
+                      >
+                        {row.type === "income" ? "+" : "−"}
+                        {money.format1(row.amount)}
+                      </span>
+                    </div>
+                    <div className="mt-0.5 text-[11px] text-muted-foreground">{row.date}</div>
+                  </div>
+                  <div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="rounded-full border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                        Ya tienes (manual)
+                      </span>
+                      {manual ? (
+                        <>
+                          <span className="font-medium text-foreground">{manual.category}</span>
+                          {manual.description ? (
+                            <span className="truncate text-[11.5px] text-muted-foreground">
+                              {manual.description}
+                            </span>
+                          ) : null}
+                          <span
+                            className={`shrink-0 tabular-nums font-medium ${
+                              manual.type === "income" ? "text-positive" : "text-foreground"
+                            }`}
+                          >
+                            {manual.type === "income" ? "+" : "−"}
+                            {money.format1(manual.amount)}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-[11.5px] text-muted-foreground">
+                          (manual en otro mes)
+                        </span>
+                      )}
+                    </div>
+                    {manual ? (
+                      <div className="mt-0.5 text-[11px] text-muted-foreground">{manual.date}</div>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => deleteMovement.mutate({ id: row.id, month: row.month })}
+                    className="rounded-md border border-border bg-card px-2.5 py-1.5 text-[12px] font-medium text-foreground/80 transition hover:border-destructive/40 hover:text-destructive"
+                  >
+                    Borrar importado
+                  </button>
+                  {manual ? (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteManual(manual.id, row)}
+                      className="rounded-md border border-border bg-card px-2.5 py-1.5 text-[12px] font-medium text-foreground/80 transition hover:border-destructive/40 hover:text-destructive"
+                    >
+                      Borrar manual
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateMovement.mutate({
+                        id: row.id,
+                        month: row.month,
+                        duplicate_of: null,
+                        excluded: false,
+                      })
+                    }
+                    className="rounded-md border border-border bg-card px-2.5 py-1.5 text-[12px] font-medium text-foreground/80 transition hover:border-border-strong hover:text-foreground"
+                  >
+                    No es duplicado
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </SectionCard>
     </section>

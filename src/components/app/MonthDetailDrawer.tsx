@@ -58,9 +58,7 @@ export function MonthDetailDrawer({ month, open, onOpenChange }: Props) {
             <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
               Cierre mensual
             </div>
-            <DialogTitle className="font-display text-2xl tracking-tight">
-              {niceMonth}
-            </DialogTitle>
+            <DialogTitle className="font-display text-2xl tracking-tight">{niceMonth}</DialogTitle>
             <DialogDescription className="sr-only">
               Detalle del cierre de {niceMonth}
             </DialogDescription>
@@ -115,7 +113,9 @@ export function MonthDetailDrawer({ month, open, onOpenChange }: Props) {
                       <Stat
                         label="Gastos"
                         value={money.format1(exp.expenseTotal)}
-                        hint={prevExp ? `vs ${money.format1(prevExp.expenseTotal)} ant.` : undefined}
+                        hint={
+                          prevExp ? `vs ${money.format1(prevExp.expenseTotal)} ant.` : undefined
+                        }
                       />
                       <Stat
                         label="Neto del mes"
@@ -153,9 +153,7 @@ export function MonthDetailDrawer({ month, open, onOpenChange }: Props) {
                 <span className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
                   Movimientos
                   {(movements ?? []).length > 0 && (
-                    <span className="ml-2 text-foreground">
-                      {(movements ?? []).length}
-                    </span>
+                    <span className="ml-2 text-foreground">{(movements ?? []).length}</span>
                   )}
                 </span>
                 <button
@@ -236,15 +234,13 @@ export function MonthDetailDrawer({ month, open, onOpenChange }: Props) {
         </DialogContent>
       </Dialog>
 
-      <AddMovementSheet
-        open={addOpen}
-        onOpenChange={setAddOpen}
-        defaultMonth={month}
-      />
+      <AddMovementSheet open={addOpen} onOpenChange={setAddOpen} defaultMonth={month} />
 
       <AddMovementSheet
         open={!!editingMovement}
-        onOpenChange={(o) => { if (!o) setEditingMovement(null); }}
+        onOpenChange={(o) => {
+          if (!o) setEditingMovement(null);
+        }}
         movement={editingMovement ?? undefined}
       />
     </>
@@ -279,13 +275,23 @@ function MovementGroup({
       </div>
       <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
         {rows.map((row) => (
-          <div key={row.id} className="flex items-center gap-3 px-4 py-3 text-[13px]">
+          <div
+            key={row.id}
+            className={`flex items-center gap-3 px-4 py-3 text-[13px] ${
+              row.excluded ? "opacity-60" : ""
+            }`}
+          >
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline gap-2">
                 <span className="font-medium text-foreground">{row.category}</span>
                 {row.description ? (
                   <span className="truncate text-[11.5px] text-muted-foreground">
                     {row.description}
+                  </span>
+                ) : null}
+                {row.excluded ? (
+                  <span className="rounded-full border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    No cuenta
                   </span>
                 ) : null}
               </div>
@@ -373,9 +379,7 @@ function Stat({
       <div className="mt-1 font-display text-base font-semibold tabular-nums text-foreground">
         {value}
       </div>
-      {hint ? (
-        <div className="mt-0.5 text-[11px] text-muted-foreground">{hint}</div>
-      ) : null}
+      {hint ? <div className="mt-0.5 text-[11px] text-muted-foreground">{hint}</div> : null}
     </div>
   );
 }
