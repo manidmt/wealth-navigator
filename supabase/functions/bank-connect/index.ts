@@ -1,11 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, corsResponse } from "../_shared/cors.ts";
-import { getToken, createRequisition } from "../_shared/gocardless.ts";
+import { startAuth } from "../_shared/enablebanking.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -15,32 +14,24 @@ serve(async (req) => {
     const { data: { user }, error: authErr } = await supabase.auth.getUser();
     if (authErr || !user) return corsResponse({ error: "Unauthorized" }, 401);
 
-    const { institution_id, institution_name } = await req.json() as {
-      institution_id: string;
-      institution_name: string;
-    };
-
-    const token = await getToken();
-    const reference = `${user.id.slice(0, 8)}_${Date.now()}`;
+    const { aspsp_name, aspsp_country } = await req.json() as { aspsp_name: string; aspsp_country: string };
+    const state = crypto.randomUUID();
     const redirectUrl = `${Deno.env.get("APP_URL") ?? "https://wealthos.manidmt.es"}/bank-callback`;
+    const validUntil = new Date(Date.now() + 180 * 86400_000).toISOString();
 
-    const requisition = await createRequisition(token, institution_id, reference, redirectUrl);
+    const { url } = await startAuth({ aspspName: aspsp_name, aspspCountry: aspsp_country, state, redirectUrl, validUntil });
 
-    await supabase.from("bank_connections").upsert(
-      {
-        user_id: user.id,
-        institution_id,
-        institution_name,
-        requisition_id: requisition.id,
-        account_ids: [],
-        status: "pending",
-      },
-      { onConflict: "user_id,institution_id" },
-    );
+    await supabase.from("bank_connections").insert({
+      user_id: user.id,
+      institution_name: aspsp_name,
+      aspsp_country,
+      auth_state: state,
+      status: "pending",
+      account_ids: [],
+    });
 
-    return corsResponse({ link: requisition.link, requisition_id: requisition.id });
+    return corsResponse({ url });
   } catch (e) {
-    console.error(e);
     return corsResponse({ error: (e as Error).message }, 500);
   }
 });
