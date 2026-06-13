@@ -1,12 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Download, FileJson, FileSpreadsheet, Globe, User2, Building2, RefreshCw, Unlink, Plus, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { useMemo, useState } from "react";
 import {
+  Download,
+  FileJson,
+  FileSpreadsheet,
+  Globe,
+  User2,
+  Building2,
+  RefreshCw,
+  Unlink,
+  Plus,
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+} from "lucide-react";
+import {
+  useAspsps,
   useBankConnections,
   useConnectBank,
   useSyncBank,
   useDisconnectBank,
-  INSTITUTIONS,
   type BankConnection,
 } from "@/lib/bank-api";
 import {
@@ -44,16 +58,18 @@ const fxRates = [
 ];
 
 function StatusBadge({ status }: { status: BankConnection["status"] }) {
-  if (status === "active") return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-positive/10 px-2 py-0.5 text-[11px] font-medium text-positive ring-1 ring-positive/30">
-      <CheckCircle2 className="h-3 w-3" /> Activa
-    </span>
-  );
-  if (status === "pending") return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-medium text-warning ring-1 ring-warning/30">
-      <Clock className="h-3 w-3" /> Pendiente
-    </span>
-  );
+  if (status === "active")
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-positive/10 px-2 py-0.5 text-[11px] font-medium text-positive ring-1 ring-positive/30">
+        <CheckCircle2 className="h-3 w-3" /> Activa
+      </span>
+    );
+  if (status === "pending")
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-medium text-warning ring-1 ring-warning/30">
+        <Clock className="h-3 w-3" /> Pendiente
+      </span>
+    );
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive ring-1 ring-destructive/30">
       <AlertCircle className="h-3 w-3" /> {status === "expired" ? "Expirada" : "Error"}
@@ -61,17 +77,32 @@ function StatusBadge({ status }: { status: BankConnection["status"] }) {
   );
 }
 
+/** true si session_expires_at existe y caduca dentro de 7 días (incluye ya caducadas). */
+function expiresSoon(sessionExpiresAt: string | null): boolean {
+  if (!sessionExpiresAt) return false;
+  const diffMs = new Date(sessionExpiresAt).getTime() - Date.now();
+  return diffMs <= 7 * 24 * 60 * 60 * 1000;
+}
+
 function BankSection() {
   const { data: connections = [], isLoading } = useBankConnections();
+  const { data: aspsps = [], isLoading: isLoadingAspsps } = useAspsps();
   const connectBank = useConnectBank();
   const syncBank = useSyncBank();
   const disconnectBank = useDisconnectBank();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
-  async function handleConnect(institution: typeof INSTITUTIONS[number]) {
-    const result = await connectBank.mutateAsync(institution);
+  const filteredAspsps = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return aspsps;
+    return aspsps.filter((a) => a.name.toLowerCase().includes(q));
+  }, [aspsps, search]);
+
+  async function handleConnect(aspsp: (typeof aspsps)[number]) {
+    const result = await connectBank.mutateAsync(aspsp);
     setDialogOpen(false);
-    window.location.href = result.link;
+    window.location.href = result.url;
   }
 
   return (
@@ -80,58 +111,74 @@ function BankSection() {
       description="Conecta tus bancos vía Open Banking para importar transacciones automáticamente."
     >
       <div className="space-y-3">
-        {isLoading && (
-          <p className="text-[13px] text-muted-foreground">Cargando…</p>
-        )}
+        {isLoading && <p className="text-[13px] text-muted-foreground">Cargando…</p>}
 
-        {connections.map((conn) => (
-          <div
-            key={conn.id}
-            className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-4 py-3"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <div className="min-w-0">
-                <div className="text-[13px] font-medium">{conn.institution_name}</div>
-                <div className="text-[11px] text-muted-foreground">
-                  {conn.last_synced_at
-                    ? `Sincronizado ${new Date(conn.last_synced_at).toLocaleDateString("es-ES")}`
-                    : "Sin sincronizar"}
+        {connections.map((conn) => {
+          const expiring = expiresSoon(conn.session_expires_at);
+          return (
+            <div
+              key={conn.id}
+              className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-4 py-3"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <div className="min-w-0">
+                  <div className="text-[13px] font-medium">{conn.institution_name}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {conn.last_synced_at
+                      ? `Sincronizado ${new Date(conn.last_synced_at).toLocaleDateString("es-ES")}`
+                      : "Sin sincronizar"}
+                  </div>
+                  {expiring && (
+                    <div className="mt-1 flex items-center gap-1 text-[11px] text-warning">
+                      <AlertTriangle className="h-3 w-3 shrink-0" />
+                      La sesión caduca pronto, reconecta
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <StatusBadge status={conn.status} />
-              {conn.status === "active" && (
+              <div className="flex items-center gap-2 shrink-0">
+                <StatusBadge status={conn.status} />
+                {conn.status === "active" && (
+                  <button
+                    type="button"
+                    title="Sincronizar"
+                    onClick={() => syncBank.mutate(conn.id)}
+                    disabled={syncBank.isPending}
+                    className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition hover:bg-background hover:text-foreground disabled:opacity-40"
+                  >
+                    <RefreshCw
+                      className={`h-3.5 w-3.5 ${syncBank.isPending ? "animate-spin" : ""}`}
+                    />
+                  </button>
+                )}
                 <button
                   type="button"
-                  title="Sincronizar"
-                  onClick={() => syncBank.mutate(conn.id)}
-                  disabled={syncBank.isPending}
-                  className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition hover:bg-background hover:text-foreground disabled:opacity-40"
+                  title="Desconectar"
+                  onClick={() => disconnectBank.mutate(conn.id)}
+                  className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition hover:bg-background hover:text-destructive"
                 >
-                  <RefreshCw className={`h-3.5 w-3.5 ${syncBank.isPending ? "animate-spin" : ""}`} />
+                  <Unlink className="h-3.5 w-3.5" />
                 </button>
-              )}
-              <button
-                type="button"
-                title="Desconectar"
-                onClick={() => disconnectBank.mutate(conn.id)}
-                className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition hover:bg-background hover:text-destructive"
-              >
-                <Unlink className="h-3.5 w-3.5" />
-              </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {connections.length === 0 && !isLoading && (
           <p className="text-[13px] text-muted-foreground">
-            Ningún banco conectado. Conecta tu primer banco para importar transacciones automáticamente.
+            Ningún banco conectado. Conecta tu primer banco para importar transacciones
+            automáticamente.
           </p>
         )}
 
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog
+          open={dialogOpen}
+          onOpenChange={(open) => {
+            setDialogOpen(open);
+            if (!open) setSearch("");
+          }}
+        >
           <DialogTrigger asChild>
             <button
               type="button"
@@ -144,19 +191,33 @@ function BankSection() {
             <DialogHeader>
               <DialogTitle>Selecciona tu banco</DialogTitle>
             </DialogHeader>
-            <div className="grid gap-2 pt-2">
-              {INSTITUTIONS.map((inst) => (
-                <button
-                  key={inst.id}
-                  type="button"
-                  onClick={() => handleConnect(inst)}
-                  disabled={connectBank.isPending}
-                  className="flex items-center gap-3 rounded-lg border border-border px-4 py-3 text-left text-[13px] font-medium transition hover:bg-muted disabled:opacity-40"
-                >
-                  <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  {inst.name}
-                </button>
-              ))}
+            <div className="space-y-2 pt-2">
+              <Input
+                placeholder="Buscar banco…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                autoFocus
+              />
+              <div className="grid max-h-72 gap-2 overflow-y-auto pr-1">
+                {isLoadingAspsps && (
+                  <p className="px-1 text-[13px] text-muted-foreground">Cargando bancos…</p>
+                )}
+                {!isLoadingAspsps && filteredAspsps.length === 0 && (
+                  <p className="px-1 text-[13px] text-muted-foreground">Sin resultados.</p>
+                )}
+                {filteredAspsps.map((aspsp) => (
+                  <button
+                    key={`${aspsp.name}-${aspsp.country}`}
+                    type="button"
+                    onClick={() => handleConnect(aspsp)}
+                    disabled={connectBank.isPending}
+                    className="flex items-center gap-3 rounded-lg border border-border px-4 py-3 text-left text-[13px] font-medium transition hover:bg-muted disabled:opacity-40"
+                  >
+                    <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    {aspsp.name}
+                  </button>
+                ))}
+              </div>
             </div>
             {connectBank.isError && (
               <p className="text-[12px] text-destructive">{(connectBank.error as Error).message}</p>
@@ -188,13 +249,7 @@ function SettingsPage() {
     if (typeof window === "undefined") return;
     const rows = [
       ["month", "assets", "liabilities", "netWorth", "savings"],
-      ...data.series.map((p) => [
-        p.month,
-        p.assets,
-        p.liabilities,
-        p.netWorth,
-        p.savings,
-      ]),
+      ...data.series.map((p) => [p.month, p.assets, p.liabilities, p.netWorth, p.savings]),
     ];
     const csv = rows.map((r) => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -217,10 +272,7 @@ function SettingsPage() {
       <div className="space-y-10 px-4 py-8 md:px-8">
         {/* Two-column intro: owner + apariencia */}
         <section className="grid gap-5 lg:grid-cols-[1.2fr_1fr]">
-          <SectionCard
-            title="Propietario"
-            description="Identidad mostrada en cabecera y reportes."
-          >
+          <SectionCard title="Propietario" description="Identidad mostrada en cabecera y reportes.">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5 text-[12px]">
@@ -246,10 +298,7 @@ function SettingsPage() {
             </div>
           </SectionCard>
 
-          <SectionCard
-            title="Apariencia"
-            description="Tema y densidad visual del dashboard."
-          >
+          <SectionCard title="Apariencia" description="Tema y densidad visual del dashboard.">
             <div className="space-y-5">
               <div>
                 <div className="mb-2 text-[12px] font-medium text-foreground">Tema</div>
@@ -292,7 +341,10 @@ function SettingsPage() {
                       />
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant={r.source === "base" ? "default" : "secondary"} className="font-normal">
+                      <Badge
+                        variant={r.source === "base" ? "default" : "secondary"}
+                        className="font-normal"
+                      >
                         {r.source}
                       </Badge>
                     </td>
