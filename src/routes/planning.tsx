@@ -104,6 +104,7 @@ const AUTO_POSITION = "__auto__";
 function PlanningPage() {
   const { data: plans = [], isLoading } = useInvestmentPlans();
   const { data: signals = {} } = useLatestSignals();
+  const { data: positions = [] } = usePortfolioPositions();
   const dashboard = useDashboard();
 
   const [planModalOpen, setPlanModalOpen] = useState(false);
@@ -181,6 +182,7 @@ function PlanningPage() {
                 key={plan.id}
                 plan={plan}
                 signals={signals}
+                positions={positions}
                 onEdit={() => openEdit(plan)}
                 onRegister={() => setContributionPlan(plan)}
               />

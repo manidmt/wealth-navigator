@@ -3,6 +3,7 @@ import { Flame, Pencil } from "lucide-react";
 import type { InvestmentPlan } from "@/lib/planning-api";
 import { useFireDryPowder } from "@/lib/planning-api";
 import { toEnginePlan } from "@/lib/planning-calc";
+import type { PortfolioPosition } from "@/lib/portfolio-api";
 import {
   currentMultiplier,
   effectiveQuota,
@@ -13,11 +14,13 @@ import {
 export function StrategyCard({
   plan,
   signals,
+  positions,
   onEdit,
   onRegister,
 }: {
   plan: InvestmentPlan;
   signals: SignalMap;
+  positions?: Pick<PortfolioPosition, "id" | "quantity" | "avgCost" | "currentPrice">[];
   onEdit: () => void;
   onRegister: () => void;
 }) {
@@ -31,6 +34,17 @@ export function StrategyCard({
   const tr = evaluateTrigger(trigger, signals, plan.dry_powder?.last_fired_at ?? null);
 
   const light = tr.fired ? "bg-red-500" : tr.blocked ? "bg-amber-500" : "bg-emerald-500";
+
+  const linkedPos = plan.portfolio_position_id
+    ? positions?.find((p) => p.id === plan.portfolio_position_id)
+    : undefined;
+
+  let pnl = 0;
+  if (linkedPos) {
+    const cost = Number(linkedPos.quantity) * Number(linkedPos.avgCost);
+    const marketValue = Number(linkedPos.quantity) * Number(linkedPos.currentPrice);
+    pnl = cost > 0 ? (marketValue / cost - 1) * 100 : 0;
+  }
 
   return (
     <div className="rounded-xl border border-border p-4">
@@ -54,6 +68,17 @@ export function StrategyCard({
         <span className="text-muted-foreground">×{multi}</span>
         <span className="text-[16px] font-bold tabular-nums">{quota.toFixed(0)} €/mes</span>
       </div>
+
+      {linkedPos && (
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          Posición: {(Number(linkedPos.quantity) * Number(linkedPos.currentPrice)).toFixed(0)} €
+          {" · P&L "}
+          <span className={pnl >= 0 ? "text-emerald-600" : "text-red-600"}>
+            {pnl >= 0 ? "+" : ""}
+            {pnl.toFixed(1)} %
+          </span>
+        </p>
+      )}
 
       {plan.dry_powder && (
         <div className="mt-2 flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-[12px]">
