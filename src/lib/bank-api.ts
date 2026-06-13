@@ -7,9 +7,9 @@ export type BankConnectionStatus = "pending" | "active" | "expired" | "error";
 export type BankConnection = {
   id: string;
   user_id: string;
-  institution_id: string;
+  institution_id: string | null;
   institution_name: string;
-  requisition_id: string;
+  requisition_id: string | null;
   account_ids: string[];
   status: BankConnectionStatus;
   last_synced_at: string | null;
@@ -20,19 +20,22 @@ export type BankConnection = {
   created_at: string;
 };
 
-export type Institution = { id: string; name: string };
+export type Aspsp = { name: string; country: string };
 
-// Verify IDs with: GET /api/v2/institutions/?country=ES after Task 1 Step 6
-export const INSTITUTIONS: Institution[] = [
-  { id: "BBVA_ES_BBVAESMMXXX", name: "BBVA" },
-  { id: "N26_NTSBDEB1XXX", name: "N26" },
-  { id: "REVOLUT_REVOGB21", name: "Revolut" },
-  { id: "INGDDEFFXXX_ES", name: "ING" },
-  { id: "SANTANDER_BSCHESMM", name: "Santander" },
-  { id: "CAIXABANK_CAIXESBBXXX", name: "CaixaBank" },
-  { id: "MYINVESTOR_ES", name: "MyInvestor" },
-  { id: "TRADE_REPUBLIC_TRPUDEB1XXX", name: "Trade Republic" },
-];
+export function useAspsps() {
+  const { user } = useAuth();
+  return useQuery<Aspsp[]>({
+    queryKey: ["aspsps"],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("bank-aspsps", { body: {} });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+      return (data.aspsps ?? []) as Aspsp[];
+    },
+    enabled: !!user,
+    staleTime: 1000 * 60 * 60,
+  });
+}
 
 export function useBankConnections() {
   const { user } = useAuth();
@@ -54,9 +57,9 @@ export function useBankConnections() {
 export function useConnectBank() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (institution: Institution): Promise<{ link: string; requisition_id: string }> => {
+    mutationFn: async (aspsp: Aspsp): Promise<{ url: string }> => {
       const { data, error } = await supabase.functions.invoke("bank-connect", {
-        body: { institution_id: institution.id, institution_name: institution.name },
+        body: { aspsp_name: aspsp.name, aspsp_country: aspsp.country },
       });
       if (error) throw error;
       if (data.error) throw new Error(data.error);
