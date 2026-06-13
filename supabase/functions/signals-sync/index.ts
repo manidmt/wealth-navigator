@@ -80,7 +80,7 @@ serve(async (req) => {
         .from("market_signals")
         .select("value")
         .eq("signal_key", athKey)
-        .order("date", { ascending: false })
+        .order("value", { ascending: false })
         .limit(1)
         .maybeSingle();
       if (athErr) throw new Error(`read ${athKey}: ${athErr.message}`);
