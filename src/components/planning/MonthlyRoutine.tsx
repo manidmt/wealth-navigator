@@ -49,6 +49,10 @@ export function MonthlyRoutine({
   signals: SignalMap;
 }) {
   const period = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const periodLabel = new Date(`${period}-01T00:00:00`).toLocaleDateString("es-ES", {
+    month: "long",
+    year: "numeric",
+  });
   const { data: log } = useRoutineLog(period);
   const upsert = useUpsertRoutineLog();
 
@@ -82,7 +86,10 @@ export function MonthlyRoutine({
   };
 
   return (
-    <SectionCard title={`Rutina de ${period}`} description={`${doneCount}/${items.length} pasos`}>
+    <SectionCard
+      title={`Rutina de ${periodLabel}`}
+      description={`${doneCount}/${items.length} pasos`}
+    >
       <div className="space-y-2">
         {items.map((i) => (
           <label key={i.key} className="flex cursor-pointer items-center gap-3 text-[13px]">
