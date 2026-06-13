@@ -14,6 +14,9 @@ export type BankConnection = {
   status: BankConnectionStatus;
   last_synced_at: string | null;
   error_message: string | null;
+  aspsp_country: string | null;
+  auth_state: string | null;
+  session_expires_at: string | null;
   created_at: string;
 };
 
