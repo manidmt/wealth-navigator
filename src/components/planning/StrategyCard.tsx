@@ -10,14 +10,6 @@ import {
   type SignalMap,
 } from "@/lib/strategy-engine";
 
-const ASSET_ICON: Record<string, string> = {
-  rv_core: "🚀",
-  rv_opp: "🚀",
-  gold: "🏆",
-  btc: "₿",
-  rf: "🏦",
-};
-
 export function StrategyCard({
   plan,
   signals,
@@ -44,7 +36,6 @@ export function StrategyCard({
     <div className="rounded-xl border border-border p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span>{ASSET_ICON[plan.asset_class ?? ""] ?? "📈"}</span>
           <span className="text-[14px] font-semibold">{plan.name}</span>
           {!plan.active && (
             <span className="rounded bg-muted px-1.5 py-0.5 text-[11px]">inactiva</span>

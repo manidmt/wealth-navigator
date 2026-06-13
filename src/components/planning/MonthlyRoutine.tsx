@@ -34,7 +34,7 @@ function buildItems(
     if (tr.fired && (p.dry_powder?.current_eur ?? 0) > 0) {
       items.push({
         key: `fire-${p.id}`,
-        label: `🚨 Soltar pólvora de ${p.name} (${Number(p.dry_powder!.current_eur).toFixed(0)} €) — ${tr.detail}`,
+        label: `Soltar pólvora de ${p.name} (${Number(p.dry_powder!.current_eur).toFixed(0)} €) — ${tr.detail}`,
       });
     }
   }
@@ -92,7 +92,7 @@ export function MonthlyRoutine({
         ))}
       </div>
       {doneCount === items.length && items.length > 0 && (
-        <p className="mt-3 text-[12px] text-emerald-600">✅ Rutina del mes completada</p>
+        <p className="mt-3 text-[12px] text-emerald-600">Rutina del mes completada</p>
       )}
     </SectionCard>
   );
