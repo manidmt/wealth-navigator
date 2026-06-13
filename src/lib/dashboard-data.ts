@@ -72,6 +72,7 @@ function computeDashboard(movements: any[], positions: any[], snapshots: any[]):
   type MonthEntry = { income: number; expense: number; categories: Map<string, number> };
   const byMonthMap = new Map<string, MonthEntry>();
   for (const m of movements) {
+    if (m.excluded) continue;
     const month = (m.date as string).slice(0, 7);
     if (!byMonthMap.has(month)) byMonthMap.set(month, { income: 0, expense: 0, categories: new Map() });
     const entry = byMonthMap.get(month)!;
@@ -267,7 +268,7 @@ export function useLiveDashboardData() {
     queryFn: async () => {
       const [{ data: movements, error: movErr }, { data: positions, error: posErr }, { data: snapshots, error: snapErr }] =
         await Promise.all([
-          supabase.from("movements").select("type, date, category, amount, currency").order("date"),
+          supabase.from("movements").select("type, date, category, amount, currency, excluded").order("date"),
           supabase.from("portfolio_positions").select("*"),
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (supabase as any).from("monthly_snapshots").select("month, assets, liabilities, net_worth, savings, portfolio_value").order("month"),

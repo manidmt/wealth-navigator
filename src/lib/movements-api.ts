@@ -13,6 +13,8 @@ export type MovementRecord = {
   description: string;
   amount: number;
   currency: string;
+  excluded: boolean;
+  duplicate_of: string | null;
 };
 
 export type CreateMovementInput = {
@@ -22,6 +24,8 @@ export type CreateMovementInput = {
   description?: string;
   amount: number;
   currency?: string;
+  excluded?: boolean;
+  duplicate_of?: string | null;
 };
 
 export const EXPENSE_CATEGORIES = [
@@ -49,6 +53,8 @@ function rowToRecord(row: any): MovementRecord {
     description: row.description ?? "",
     amount: Number(row.amount),
     currency: row.currency ?? "EUR",
+    excluded: row.excluded ?? false,
+    duplicate_of: row.duplicate_of ?? null,
   };
 }
 
@@ -62,7 +68,7 @@ export function useMonthMovements(month: string | null) {
       const nextMonth = mo === 12 ? `${y + 1}-01-01` : `${y}-${String(mo + 1).padStart(2, "0")}-01`;
       const { data, error } = await supabase
         .from("movements")
-        .select("id, type, date, category, description, amount, currency")
+        .select("id, type, date, category, description, amount, currency, excluded, duplicate_of")
         .gte("date", `${month}-01`)
         .lt("date", nextMonth)
         .order("date", { ascending: false });
@@ -90,6 +96,7 @@ export function useCreateMovement() {
           description: input.description ?? null,
           amount: input.amount,
           currency: input.currency ?? "EUR",
+          excluded: input.excluded ?? false,
         })
         .select()
         .single();
