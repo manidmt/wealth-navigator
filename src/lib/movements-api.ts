@@ -222,3 +222,50 @@ export function useDeleteMovement() {
     },
   });
 }
+
+export type ExclusionRule = { id: string; user_id: string; match_text: string; created_at: string };
+
+export function useExclusionRules() {
+  const { user } = useAuth();
+  return useQuery<ExclusionRule[]>({
+    queryKey: ["exclusion_rules", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("movement_exclusion_rules")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!user,
+  });
+}
+
+export function useCreateExclusionRule() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (match_text: string) => {
+      if (!user) throw new Error("No autenticado");
+      const { error } = await supabase
+        .from("movement_exclusion_rules")
+        .upsert(
+          { user_id: user.id, match_text: match_text.trim() },
+          { onConflict: "user_id,match_text" },
+        );
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["exclusion_rules"] }),
+  });
+}
+
+export function useDeleteExclusionRule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("movement_exclusion_rules").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["exclusion_rules"] }),
+  });
+}
