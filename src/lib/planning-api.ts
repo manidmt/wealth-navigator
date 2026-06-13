@@ -33,6 +33,7 @@ export type InvestmentPlan = {
   dry_powder: DryPowder | null;
   annual_multiplier: number;
   annual_multiplier_year: number | null;
+  portfolio_position_id: string | null;
   created_at: string;
 };
 
