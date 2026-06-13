@@ -52,6 +52,8 @@ import { SignalsPanel } from "@/components/planning/SignalsPanel";
 import { useLatestSignals } from "@/lib/signals-api";
 import { effectiveQuota, type SignalMap } from "@/lib/strategy-engine";
 import { useSyncContributionToPosition } from "@/lib/portfolio-sync";
+import { usePortfolioPositions } from "@/lib/portfolio-api";
+import { rankPositions, suggestPosition } from "@/lib/position-match";
 
 export const Route = createFileRoute("/planning")({
   head: () => ({
@@ -94,6 +96,8 @@ const contributionSchema = z.object({
 });
 
 type ContributionForm = z.infer<typeof contributionSchema>;
+
+const AUTO_POSITION = "__auto__";
 
 // ── Page ───────────────────────────────────────────────────────────────────
 
@@ -481,6 +485,9 @@ function PlanModal({
   const createPlan = useCreatePlan();
   const updatePlan = useUpdatePlan();
   const deletePlan = useDeletePlan();
+  const { data: positions = [] } = usePortfolioPositions();
+
+  const isStrategy = !!editing?.asset_class;
 
   const defaultValues: PlanForm = editing
     ? {
@@ -525,12 +532,39 @@ function PlanModal({
 
   const ruleType = watch("rule_type");
   const frequencyValue = watch("frequency");
+  const nameValue = watch("name");
+  const assetNameValue = watch("asset_name");
+
+  const rankedPositions = useMemo(
+    () =>
+      rankPositions(
+        nameValue ?? "",
+        assetNameValue ?? "",
+        positions.map((p) => ({ id: p.id, assetName: p.assetName })),
+      ),
+    [nameValue, assetNameValue, positions],
+  );
+
+  const [positionId, setPositionId] = useState<string>(() => {
+    if (editing?.portfolio_position_id) return editing.portfolio_position_id;
+    if (!nameValue && !assetNameValue) return AUTO_POSITION;
+    const suggestion = suggestPosition(
+      nameValue ?? "",
+      assetNameValue ?? "",
+      positions.map((p) => ({ id: p.id, assetName: p.assetName })),
+    );
+    return suggestion?.id ?? AUTO_POSITION;
+  });
 
   async function onSubmit(values: PlanForm) {
+    const payload = {
+      ...values,
+      portfolio_position_id: positionId === AUTO_POSITION ? null : positionId,
+    };
     if (editing) {
-      await updatePlan.mutateAsync({ id: editing.id, ...values });
+      await updatePlan.mutateAsync({ id: editing.id, ...payload });
     } else {
-      await createPlan.mutateAsync(values);
+      await createPlan.mutateAsync(payload);
     }
     onClose();
   }
@@ -658,6 +692,29 @@ function PlanModal({
             <Label className="text-[12px]">Notas (opcional)</Label>
             <Textarea {...register("notes")} rows={2} className="resize-none text-[13px]" />
           </div>
+
+          {isStrategy && (
+            <div className="space-y-1">
+              <Label className="text-[12px]">Posición vinculada</Label>
+              <Select value={positionId} onValueChange={setPositionId}>
+                <SelectTrigger className="text-[13px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={AUTO_POSITION}>Crear automáticamente al aportar</SelectItem>
+                  {rankedPositions.map(({ id }) => {
+                    const pos = positions.find((p) => p.id === id);
+                    if (!pos) return null;
+                    return (
+                      <SelectItem key={id} value={id}>
+                        {pos.assetName}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <DialogFooter className="gap-2 pt-2">
             {editing && (
