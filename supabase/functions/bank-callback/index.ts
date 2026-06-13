@@ -20,7 +20,7 @@ serve(async (req) => {
     const uids = session.accounts.map((a) => a.uid);
     const expires = new Date(Date.now() + 180 * 86400_000).toISOString();
 
-    await supabase.from("bank_connections")
+    const { data: updated, error: updErr } = await supabase.from("bank_connections")
       .update({
         requisition_id: session.session_id,
         account_ids: uids,
@@ -29,7 +29,12 @@ serve(async (req) => {
         session_expires_at: expires,
       })
       .eq("auth_state", state)
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .select("id");
+    if (updErr) return corsResponse({ error: updErr.message }, 500);
+    if (!updated || updated.length === 0) {
+      return corsResponse({ error: "No pending connection matches this authorization (state mismatch or expired)." }, 400);
+    }
 
     const dateFrom = new Date(Date.now() - 90 * 86400_000).toISOString().slice(0, 10);
     let inserted = 0;
