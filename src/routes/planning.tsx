@@ -51,6 +51,7 @@ import { ContributionLog } from "@/components/planning/ContributionLog";
 import { SignalsPanel } from "@/components/planning/SignalsPanel";
 import { useLatestSignals } from "@/lib/signals-api";
 import { effectiveQuota, type SignalMap } from "@/lib/strategy-engine";
+import { useSyncContributionToPosition } from "@/lib/portfolio-sync";
 
 export const Route = createFileRoute("/planning")({
   head: () => ({
@@ -705,6 +706,7 @@ function ContributionModal({
   signals: SignalMap;
 }) {
   const upsert = useUpsertContribution();
+  const syncPosition = useSyncContributionToPosition();
 
   const isStrategy = !!plan.asset_class;
 
@@ -728,6 +730,7 @@ function ContributionModal({
   });
 
   const dateValue = watch("date");
+  const priceValue = watch("price");
   const month = dateValue?.slice(0, 7) ?? "";
   const planned = isStrategy ? strategyQuota : computePlannedAmount(plan, monthlyFinancials, month);
 
@@ -741,6 +744,13 @@ function ContributionModal({
       units: values.price ? values.actual_amount / values.price : null,
       multiplier: values.multiplier ?? null,
     });
+    if (values.price && values.price > 0) {
+      syncPosition.mutate({
+        plan,
+        amount: values.actual_amount,
+        units: values.actual_amount / values.price,
+      });
+    }
     onClose();
   }
 
@@ -785,6 +795,11 @@ function ContributionModal({
           <div className="space-y-1">
             <Label className="text-[12px]">Precio de compra (opcional)</Label>
             <Input type="number" step="any" {...register("price")} className="text-[13px]" />
+            {!priceValue && (
+              <p className="text-[11px] text-muted-foreground">
+                Indica el precio para sincronizar con tu portfolio.
+              </p>
+            )}
           </div>
 
           <div className="space-y-1">
