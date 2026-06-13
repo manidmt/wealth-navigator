@@ -14,9 +14,33 @@ describe("findDuplicate", () => {
   it("fuera de ±3 días → null", () =>
     expect(findDuplicate({ amount: 15, type: "expense", date: "2026-06-20" }, manuals)).toBeNull());
   it("importe distinto → null", () =>
-    expect(findDuplicate({ amount: 14, type: "expense", date: "2026-06-10" }, manuals)).toBeNull());
+    expect(findDuplicate({ amount: 30, type: "expense", date: "2026-06-10" }, manuals)).toBeNull());
   it("tipo distinto → null", () =>
     expect(findDuplicate({ amount: 15, type: "income", date: "2026-06-10" }, manuals)).toBeNull());
   it("sin manuales → null", () =>
     expect(findDuplicate({ amount: 15, type: "expense", date: "2026-06-10" }, [])).toBeNull());
+  it("28 vs 28.73 mismo día → match (tolerancia importe)", () =>
+    expect(
+      findDuplicate({ amount: 28.73, type: "expense", date: "2026-06-03" }, [
+        { id: "x", amount: 28, type: "expense", date: "2026-06-03" },
+      ]),
+    ).toBe("x"));
+  it("23 vs 22.99 → match", () =>
+    expect(
+      findDuplicate({ amount: 22.99, type: "expense", date: "2026-06-02" }, [
+        { id: "y", amount: 23, type: "expense", date: "2026-06-02" },
+      ]),
+    ).toBe("y"));
+  it("28 vs 35 → null (fuera de tolerancia)", () =>
+    expect(
+      findDuplicate({ amount: 35, type: "expense", date: "2026-06-03" }, [
+        { id: "z", amount: 28, type: "expense", date: "2026-06-03" },
+      ]),
+    ).toBeNull());
+  it("importe grande dentro del 5% → match", () =>
+    expect(
+      findDuplicate({ amount: 210, type: "expense", date: "2026-06-03" }, [
+        { id: "g", amount: 200, type: "expense", date: "2026-06-03" },
+      ]),
+    ).toBe("g"));
 });
