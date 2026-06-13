@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
+  Trash2,
 } from "lucide-react";
 import {
   useAspsps,
@@ -23,6 +24,11 @@ import {
   useDisconnectBank,
   type BankConnection,
 } from "@/lib/bank-api";
+import {
+  useExclusionRules,
+  useCreateExclusionRule,
+  useDeleteExclusionRule,
+} from "@/lib/movements-api";
 import {
   Dialog,
   DialogContent,
@@ -229,6 +235,76 @@ function BankSection() {
   );
 }
 
+function ExclusionRulesSection() {
+  const { data: rules = [], isLoading } = useExclusionRules();
+  const createRule = useCreateExclusionRule();
+  const deleteRule = useDeleteExclusionRule();
+  const [matchText, setMatchText] = useState("");
+
+  function handleAdd(e: React.FormEvent) {
+    e.preventDefault();
+    const value = matchText.trim();
+    if (!value) return;
+    createRule.mutate(value, {
+      onSuccess: () => setMatchText(""),
+    });
+  }
+
+  return (
+    <SectionCard
+      title="Reglas de exclusión"
+      description="Movimientos cuyo concepto contenga alguno de estos textos se excluyen automáticamente al importar."
+    >
+      <div className="space-y-3">
+        {isLoading && <p className="text-[13px] text-muted-foreground">Cargando…</p>}
+
+        {rules.map((rule) => (
+          <div
+            key={rule.id}
+            className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-4 py-3"
+          >
+            <span className="text-[13px] font-medium">{rule.match_text}</span>
+            <button
+              type="button"
+              title="Borrar regla"
+              onClick={() => deleteRule.mutate(rule.id)}
+              disabled={deleteRule.isPending}
+              className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition hover:bg-background hover:text-destructive disabled:opacity-40"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ))}
+
+        {rules.length === 0 && !isLoading && (
+          <p className="text-[13px] text-muted-foreground">
+            Sin reglas todavía. Añade un texto (p.ej. INDEXA) para excluir automáticamente los
+            movimientos que lo contengan.
+          </p>
+        )}
+
+        <form onSubmit={handleAdd} className="flex items-center gap-2">
+          <Input
+            placeholder="Texto a excluir, p.ej. INDEXA"
+            value={matchText}
+            onChange={(e) => setMatchText(e.target.value)}
+            className="text-[13px]"
+          />
+          <Button type="submit" size="sm" disabled={createRule.isPending || !matchText.trim()}>
+            <Plus className="h-4 w-4" /> Añadir
+          </Button>
+        </form>
+
+        {createRule.isError && (
+          <p className="text-[12px] text-destructive">
+            Error al crear la regla. Inténtalo de nuevo.
+          </p>
+        )}
+      </div>
+    </SectionCard>
+  );
+}
+
 function SettingsPage() {
   const data = useDashboard();
 
@@ -430,6 +506,8 @@ function SettingsPage() {
         </section>
 
         <BankSection />
+
+        <ExclusionRulesSection />
 
         <section>
           <SectionLabel>Estado del proyecto</SectionLabel>

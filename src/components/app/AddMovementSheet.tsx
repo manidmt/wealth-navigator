@@ -21,6 +21,7 @@ import {
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
   useCreateMovement,
+  useCreateExclusionRule,
   useUpdateMovement,
   type MovementRecord,
   type MovementType,
@@ -45,6 +46,15 @@ function categoryOptions(type: MovementType, existing?: string) {
   return base;
 }
 
+/** Primera palabra "significativa" (≥3 chars) de la descripción, en mayúsculas, o "". */
+function significantWord(description: string): string {
+  const words = description
+    .toUpperCase()
+    .split(/\s+/)
+    .filter((w) => w.replace(/[^A-ZÁÉÍÓÚÑ0-9]/g, "").length >= 3);
+  return words[0]?.replace(/[^A-ZÁÉÍÓÚÑ0-9]/g, "") ?? "";
+}
+
 export function AddMovementSheet({ open, onOpenChange, movement, defaultMonth }: Props) {
   const isEdit = !!movement;
 
@@ -54,9 +64,12 @@ export function AddMovementSheet({ open, onOpenChange, movement, defaultMonth }:
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [excluded, setExcluded] = useState(false);
+  const [createRuleChecked, setCreateRuleChecked] = useState(false);
+  const [ruleMatchText, setRuleMatchText] = useState("");
 
   const createMovement = useCreateMovement();
   const updateMovement = useUpdateMovement();
+  const createRule = useCreateExclusionRule();
   const isPending = createMovement.isPending || updateMovement.isPending;
 
   // Sync form state when movement or open changes
@@ -69,6 +82,8 @@ export function AddMovementSheet({ open, onOpenChange, movement, defaultMonth }:
       setDescription(movement.description ?? "");
       setAmount(String(movement.amount));
       setExcluded(movement.excluded ?? false);
+      setRuleMatchText(significantWord(movement.description ?? ""));
+      setCreateRuleChecked(false);
     } else {
       setType("expense");
       setDate(defaultMonth ? `${defaultMonth}-${todayStr().slice(8)}` : todayStr());
@@ -76,6 +91,8 @@ export function AddMovementSheet({ open, onOpenChange, movement, defaultMonth }:
       setDescription("");
       setAmount("");
       setExcluded(false);
+      setRuleMatchText("");
+      setCreateRuleChecked(false);
     }
   }, [open, movement, defaultMonth]);
 
@@ -88,6 +105,8 @@ export function AddMovementSheet({ open, onOpenChange, movement, defaultMonth }:
     setDescription("");
     setAmount("");
     setExcluded(false);
+    setRuleMatchText("");
+    setCreateRuleChecked(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -117,6 +136,10 @@ export function AddMovementSheet({ open, onOpenChange, movement, defaultMonth }:
         currency: "EUR",
         excluded,
       });
+    }
+
+    if (excluded && createRuleChecked && ruleMatchText.trim()) {
+      createRule.mutate(ruleMatchText.trim());
     }
 
     if (!isEdit) reset();
@@ -256,6 +279,35 @@ export function AddMovementSheet({ open, onOpenChange, movement, defaultMonth }:
               className="mt-0.5 shrink-0"
             />
           </div>
+
+          {excluded && (
+            <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="mov-rule-text" className="text-[12px]">
+                  Excluir siempre los que contengan
+                </Label>
+                <Input
+                  id="mov-rule-text"
+                  type="text"
+                  placeholder="Ej. INDEXA"
+                  value={ruleMatchText}
+                  onChange={(e) => setRuleMatchText(e.target.value)}
+                  className="text-[13px]"
+                />
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <Label htmlFor="mov-create-rule" className="text-[12px]">
+                  Crear regla
+                </Label>
+                <Switch
+                  id="mov-create-rule"
+                  checked={createRuleChecked}
+                  onCheckedChange={setCreateRuleChecked}
+                  className="shrink-0"
+                />
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center justify-between gap-3 pt-2">
             <button
