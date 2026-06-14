@@ -7,9 +7,7 @@ import { PageHeader } from "@/components/app/SectionCard";
 import { AssistantMark } from "@/components/assistant/AssistantMark";
 import { PLAYBOOKS, SUGGESTIONS, type Playbook } from "@/lib/assistant-mock";
 import { useAuth } from "@/hooks/use-auth";
-
-const WS_BASE_URL =
-  (import.meta.env.VITE_AGENT_WS_URL as string | undefined) ?? "ws://localhost:8000";
+import { AGENT_WS_BASE_URL } from "@/lib/agent-ws";
 
 const searchSchema = z.object({
   q: z.string().optional(),
@@ -53,7 +51,7 @@ function AssistantPage() {
   // WebSocket connection
   useEffect(() => {
     if (!user?.id) return;
-    const ws = new WebSocket(`${WS_BASE_URL}/ws/${user.id}`);
+    const ws = new WebSocket(`${AGENT_WS_BASE_URL}/ws/${user.id}`);
     wsRef.current = ws;
 
     ws.onopen = () => setConnected(true);
