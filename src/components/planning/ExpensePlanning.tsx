@@ -3,7 +3,12 @@ import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useBudget, useUpsertBudget, useMonthCategorySpend } from "@/lib/budget-api";
+import {
+  useBudget,
+  useUpsertBudget,
+  useMonthCategorySpend,
+  useHistoricalCategorySpend,
+} from "@/lib/budget-api";
 import {
   totalIncome,
   availableForExpenses,
@@ -13,10 +18,14 @@ import {
   type IncomeItem,
   type BudgetMap,
 } from "@/lib/budget-calc";
+import { medianByGroup } from "@/lib/budget-history";
 import { euro, formatMonth } from "@/lib/dashboard-data";
 import { BudgetTable } from "./BudgetTable";
 import { AgentSuggestionPanel } from "./AgentSuggestionPanel";
 import { DuplicatePreviousMonthButton } from "./DuplicatePreviousMonthButton";
+import { SavingsAllocationPanel } from "./SavingsAllocationPanel";
+import type { MonthlyFinancials } from "@/lib/planning-calc";
+import { useDashboard } from "@/hooks/use-dashboard";
 
 function currentMonth(): string {
   const d = new Date();
@@ -44,6 +53,15 @@ export function ExpensePlanning() {
   const [incomes, setIncomes] = useState<IncomeItem[]>(DEFAULT_INCOMES);
   const [savingsGoal, setSavingsGoal] = useState<number>(0);
   const [budgets, setBudgets] = useState<BudgetMap>({});
+  const [allocations, setAllocations] = useState<BudgetMap>({});
+
+  const dashboard = useDashboard();
+  const monthlyFinancials: MonthlyFinancials[] = dashboard.expenses.byMonth.map((m) => ({
+    month: m.month,
+    income: m.incomeTotal,
+    expense: m.expenseTotal,
+  }));
+  const { data: history = [] } = useHistoricalCategorySpend(6);
 
   // Se siembra el estado local una sola vez por mes. No volvemos a hacerlo en cada
   // refetch (cada guardado invalida la query): si lo hiciéramos, una respuesta lenta
@@ -61,10 +79,12 @@ export function ExpensePlanning() {
       setIncomes(budget.incomes?.length ? budget.incomes : DEFAULT_INCOMES);
       setSavingsGoal(Number(budget.savings_goal) || 0);
       setBudgets(budget.budgets ?? {});
+      setAllocations(budget.allocations ?? {});
     } else {
       setIncomes(DEFAULT_INCOMES);
       setSavingsGoal(0);
       setBudgets({});
+      setAllocations({});
     }
   }, [budget, month]);
 
@@ -75,12 +95,18 @@ export function ExpensePlanning() {
   const planSavings = plannedSavings(incomes, budgets);
   const gap = savingsGap(incomes, budgets, savingsGoal);
 
-  function save(next: { incomes?: IncomeItem[]; savings_goal?: number; budgets?: BudgetMap }) {
+  function save(next: {
+    incomes?: IncomeItem[];
+    savings_goal?: number;
+    budgets?: BudgetMap;
+    allocations?: BudgetMap;
+  }) {
     upsert.mutate({
       month,
       incomes: next.incomes ?? incomes,
       savings_goal: next.savings_goal ?? savingsGoal,
       budgets: next.budgets ?? budgets,
+      allocations: next.allocations ?? allocations,
     });
   }
 
@@ -108,6 +134,17 @@ export function ExpensePlanning() {
     setSavingsGoal(value);
     save({ savings_goal: value });
   }
+  function applyBudgets(next: BudgetMap) {
+    setBudgets(next);
+    save({ budgets: next });
+  }
+  function autofillFromHistory() {
+    applyBudgets(medianByGroup(history));
+  }
+  function updateAllocations(next: BudgetMap) {
+    setAllocations(next);
+    save({ allocations: next });
+  }
 
   return (
     <div className="space-y-6 py-4">
@@ -133,7 +170,16 @@ export function ExpensePlanning() {
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
-        <DuplicatePreviousMonthButton month={month} hasData={!!budget} />
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={autofillFromHistory}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-2 text-[12px] font-medium text-foreground/80 transition hover:border-border-strong hover:text-foreground"
+          >
+            Rellenar con mi histórico (mediana 6m)
+          </button>
+          <DuplicatePreviousMonthButton month={month} hasData={!!budget} />
+        </div>
       </div>
 
       <SectionCard title="Ingresos previstos" description="Lo que esperas ingresar este mes.">
@@ -215,7 +261,20 @@ export function ExpensePlanning() {
         </div>
       </SectionCard>
 
-      <BudgetTable budgets={budgets} actuals={actuals} onChange={updateBudget} />
+      <SavingsAllocationPanel
+        month={month}
+        savingsGoal={savingsGoal}
+        allocations={allocations}
+        monthlyFinancials={monthlyFinancials}
+        onChange={updateAllocations}
+      />
+
+      <BudgetTable
+        budgets={budgets}
+        actuals={actuals}
+        onChange={updateBudget}
+        monthIsCurrent={month === currentMonth()}
+      />
 
       <AgentSuggestionPanel
         month={month}
@@ -223,6 +282,7 @@ export function ExpensePlanning() {
         savingsGoal={savingsGoal}
         budgets={budgets}
         actuals={actuals}
+        onApply={applyBudgets}
       />
     </div>
   );
