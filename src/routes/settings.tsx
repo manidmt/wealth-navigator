@@ -28,6 +28,11 @@ import {
   useExclusionRules,
   useCreateExclusionRule,
   useDeleteExclusionRule,
+  useCategoryRules,
+  useCreateCategoryRule,
+  useDeleteCategoryRule,
+  EXPENSE_CATEGORIES,
+  INCOME_CATEGORIES,
 } from "@/lib/movements-api";
 import {
   Dialog,
@@ -36,6 +41,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { AppShell } from "@/components/app/AppShell";
 import { PageHeader, SectionCard, SectionLabel } from "@/components/app/SectionCard";
 import { Badge } from "@/components/ui/badge";
@@ -305,6 +317,81 @@ function ExclusionRulesSection() {
   );
 }
 
+function CategoryRulesSection() {
+  const { data: rules = [], isLoading } = useCategoryRules();
+  const createRule = useCreateCategoryRule();
+  const deleteRule = useDeleteCategoryRule();
+  const [matchText, setMatchText] = useState("");
+  const allCats = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
+  const [category, setCategory] = useState(allCats[0]);
+
+  function handleAdd(e: React.FormEvent) {
+    e.preventDefault();
+    const value = matchText.trim();
+    if (!value) return;
+    createRule.mutate({ match_text: value, category }, { onSuccess: () => setMatchText("") });
+  }
+
+  return (
+    <SectionCard
+      title="Reglas de categoría"
+      description="Al importar, los movimientos cuyo concepto contenga este texto se asignan a la categoría elegida (tiene prioridad sobre la detección automática)."
+    >
+      <div className="space-y-3">
+        {isLoading && <p className="text-[13px] text-muted-foreground">Cargando…</p>}
+        {rules.map((rule) => (
+          <div
+            key={rule.id}
+            className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-4 py-3"
+          >
+            <span className="text-[13px]">
+              <span className="font-medium">{rule.match_text}</span>
+              <span className="text-muted-foreground"> → {rule.category}</span>
+            </span>
+            <button
+              type="button"
+              title="Borrar regla"
+              onClick={() => deleteRule.mutate(rule.id)}
+              disabled={deleteRule.isPending}
+              className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition hover:bg-background hover:text-destructive disabled:opacity-40"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ))}
+        {rules.length === 0 && !isLoading && (
+          <p className="text-[13px] text-muted-foreground">
+            Sin reglas todavía. Ej: concepto "NETFLIX" → categoría "Suscripciones".
+          </p>
+        )}
+        <form onSubmit={handleAdd} className="flex flex-wrap items-center gap-2">
+          <Input
+            placeholder="Concepto, p.ej. NETFLIX"
+            value={matchText}
+            onChange={(e) => setMatchText(e.target.value)}
+            className="min-w-[160px] flex-1 text-[13px]"
+          />
+          <Select value={category} onValueChange={setCategory}>
+            <SelectTrigger className="w-[180px] text-[13px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {allCats.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button type="submit" size="sm" disabled={createRule.isPending || !matchText.trim()}>
+            <Plus className="h-4 w-4" /> Añadir
+          </Button>
+        </form>
+      </div>
+    </SectionCard>
+  );
+}
+
 function SettingsPage() {
   const data = useDashboard();
 
@@ -508,6 +595,8 @@ function SettingsPage() {
         <BankSection />
 
         <ExclusionRulesSection />
+
+        <CategoryRulesSection />
 
         <section>
           <SectionLabel>Estado del proyecto</SectionLabel>
