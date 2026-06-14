@@ -24,6 +24,8 @@ export function buildBudgetSuggestionPrompt(input: {
       ? `Con este plan el ahorro estimado es ${planned}€, ${Math.abs(gap)}€ por debajo del objetivo (${savingsGoal}€).`
       : `Con este plan el ahorro estimado es ${planned}€, ${gap}€ por encima del objetivo (${savingsGoal}€).`;
 
+  const groupKeys = BUDGET_GROUPS.map((g) => g.key).join(", ");
+
   return [
     `Estás revisando mi planificación de gastos del mes ${month}.`,
     `Ingresos previstos: ${income}€. Objetivo de ahorro: ${savingsGoal}€.`,
@@ -33,5 +35,6 @@ export function buildBudgetSuggestionPrompt(input: {
     gap < 0
       ? `Para alcanzar el objetivo tendría que recortar ${Math.abs(gap)}€. Sugiéreme en qué grupos concretos recortar y cuánto, priorizando donde voy más holgado o me estoy pasando. Sé concreto y breve.`
       : `Voy bien para el objetivo. Dime si ves algún grupo donde me esté pasando y si hay margen para algún recorte adicional. Sé concreto y breve.`,
+    `Termina tu respuesta con un bloque de código json (entre triple backtick json) con el presupuesto propuesto por grupo, usando exactamente estas claves: ${groupKeys}. Solo números enteros en euros, sin comentarios.`,
   ].join("\n");
 }

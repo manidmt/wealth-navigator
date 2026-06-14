@@ -23,4 +23,9 @@ describe("buildBudgetSuggestionPrompt", () => {
   it("pide sugerencias de recorte", () => {
     expect(prompt.toLowerCase()).toContain("recort");
   });
+  it("pide un bloque json con las claves de grupo", () => {
+    expect(prompt.toLowerCase()).toContain("json");
+    expect(prompt).toContain("comida");
+    expect(prompt).toContain("ocio");
+  });
 });
