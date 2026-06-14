@@ -274,6 +274,7 @@ export function ExpensePlanning() {
         actuals={actuals}
         onChange={updateBudget}
         monthIsCurrent={month === currentMonth()}
+        categorySpend={spend}
       />
 
       <AgentSuggestionPanel

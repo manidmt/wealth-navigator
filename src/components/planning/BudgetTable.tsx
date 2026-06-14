@@ -1,3 +1,5 @@
+import { Fragment, useState } from "react";
+import { ChevronRight, ChevronDown } from "lucide-react";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Input } from "@/components/ui/input";
 import { BUDGET_GROUPS } from "@/lib/budget-groups";
@@ -21,21 +23,42 @@ export function BudgetTable({
   actuals,
   onChange,
   monthIsCurrent = true,
+  categorySpend = [],
 }: {
   budgets: BudgetMap;
   actuals: BudgetMap;
   onChange: (groupKey: string, amount: number) => void;
   monthIsCurrent?: boolean;
+  categorySpend?: { category: string; amount: number }[];
 }) {
   const now = new Date();
   const totalPlanned = totalBudgeted(budgets);
   const totalActual = totalBudgeted(actuals);
   const totalProjected = projectMonthEnd(totalActual, now, monthIsCurrent);
 
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  function toggle(key: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  // Gasto real por categoría individual, para el desglose de cada grupo.
+  const spendByCategory = new Map<string, number>();
+  for (const s of categorySpend) {
+    spendByCategory.set(
+      s.category,
+      (spendByCategory.get(s.category) ?? 0) + (Number(s.amount) || 0),
+    );
+  }
+
   return (
     <SectionCard
       title="Presupuesto por categoría"
-      description="Cuánto quieres gastar en cada grupo y cómo vas frente a lo real (con proyección a fin de mes)."
+      description="Cuánto quieres gastar en cada grupo y cómo vas frente a lo real (con proyección a fin de mes). Pulsa un grupo para ver sus categorías."
     >
       <div className="overflow-x-auto">
         <table className="w-full text-[12.5px]">
@@ -57,43 +80,73 @@ export function BudgetTable({
               const projected = projectMonthEnd(actual, now, monthIsCurrent);
               const alert = budgetAlert(planned, actual, projected);
               const barPct = Math.min(pct, 1) * 100;
+              const isOpen = expanded.has(g.key);
               return (
-                <tr key={g.key}>
-                  <td className="py-2 pr-4 font-medium text-foreground">{g.label}</td>
-                  <td className="py-2 pr-4 text-right">
-                    <Input
-                      type="number"
-                      step="1"
-                      value={planned}
-                      onChange={(e) => onChange(g.key, Number(e.target.value) || 0)}
-                      className="ml-auto w-24 text-right text-[12.5px]"
-                    />
-                  </td>
-                  <td className="py-2 pr-4 text-right">{euro.format(actual)}</td>
-                  <td className="py-2 pr-4">
-                    <div className="flex items-center gap-2">
-                      <div className="h-1.5 w-24 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className={`h-full ${ALERT_BAR[alert]}`}
-                          style={{ width: `${barPct}%` }}
-                        />
+                <Fragment key={g.key}>
+                  <tr>
+                    <td className="py-2 pr-4 font-medium text-foreground">
+                      <button
+                        type="button"
+                        onClick={() => toggle(g.key)}
+                        className="inline-flex items-center gap-1.5 text-left hover:text-primary"
+                        aria-expanded={isOpen}
+                      >
+                        {isOpen ? (
+                          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        )}
+                        {g.label}
+                      </button>
+                    </td>
+                    <td className="py-2 pr-4 text-right">
+                      <Input
+                        type="number"
+                        step="1"
+                        value={planned}
+                        onChange={(e) => onChange(g.key, Number(e.target.value) || 0)}
+                        className="ml-auto w-24 text-right text-[12.5px]"
+                      />
+                    </td>
+                    <td className="py-2 pr-4 text-right">{euro.format(actual)}</td>
+                    <td className="py-2 pr-4">
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className={`h-full ${ALERT_BAR[alert]}`}
+                            style={{ width: `${barPct}%` }}
+                          />
+                        </div>
+                        <span className="text-[11px] text-muted-foreground">
+                          {planned > 0 ? `${Math.round(pct * 100)}%` : "—"}
+                        </span>
                       </div>
-                      <span className="text-[11px] text-muted-foreground">
-                        {planned > 0 ? `${Math.round(pct * 100)}%` : "—"}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="py-2 pr-4 text-right text-muted-foreground">
-                    {monthIsCurrent && planned > 0 ? euro.format(projected) : "—"}
-                  </td>
-                  <td className="py-2 text-right">
-                    {planned === 0 ? (
-                      <span className="text-muted-foreground">Sin presupuesto</span>
-                    ) : (
-                      <span className={ALERT_LABEL[alert].cls}>{ALERT_LABEL[alert].text}</span>
-                    )}
-                  </td>
-                </tr>
+                    </td>
+                    <td className="py-2 pr-4 text-right text-muted-foreground">
+                      {monthIsCurrent && planned > 0 ? euro.format(projected) : "—"}
+                    </td>
+                    <td className="py-2 text-right">
+                      {planned === 0 ? (
+                        <span className="text-muted-foreground">Sin presupuesto</span>
+                      ) : (
+                        <span className={ALERT_LABEL[alert].cls}>{ALERT_LABEL[alert].text}</span>
+                      )}
+                    </td>
+                  </tr>
+                  {isOpen &&
+                    g.categories.map((cat) => (
+                      <tr key={`${g.key}-${cat}`} className="bg-muted/20 text-[11.5px]">
+                        <td className="py-1.5 pr-4 pl-7 text-muted-foreground">{cat}</td>
+                        <td className="py-1.5 pr-4" />
+                        <td className="py-1.5 pr-4 text-right text-muted-foreground">
+                          {euro.format(spendByCategory.get(cat) ?? 0)}
+                        </td>
+                        <td className="py-1.5 pr-4" />
+                        <td className="py-1.5 pr-4" />
+                        <td className="py-1.5" />
+                      </tr>
+                    ))}
+                </Fragment>
               );
             })}
           </tbody>
