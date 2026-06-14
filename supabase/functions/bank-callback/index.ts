@@ -6,6 +6,7 @@ import { mapTransaction, isBooked } from "../_shared/bank-mapping.ts";
 import { findDuplicate, type DedupRow } from "../_shared/dedup.ts";
 import { isCashWithdrawal, matchesExclusionRule } from "../_shared/non-expense.ts";
 import { classifyBatch } from "../_shared/llm-classify.ts";
+import { categoryFromRules } from "../_shared/category-rules.ts";
 
 // EXPENSE_CATEGORIES / INCOME_CATEGORIES (copiadas de src/lib/movements-api.ts; mantener sincronizadas)
 const EXPENSE_CATEGORIES = ["Café","Coche","Comer fuera","Comida","Cuidado personal","Deporte","Educación","Formación","Gestiones","Gimnasio","Higiene","Hogar","Impuestos","Ocio","Otro","Regalo","Ropa","Salud","Suplementos","Suscripciones","Tecnología","Transporte","Viaje"];
@@ -18,6 +19,9 @@ async function enrichRows(supabase: any, rows: any[], txs: any[], userId: string
   const { data: rulesRaw } = await supabase
     .from("movement_exclusion_rules").select("match_text").eq("user_id", userId);
   const rules = (rulesRaw ?? []) as { match_text: string }[];
+  const { data: catRulesRaw } = await supabase
+    .from("movement_category_rules").select("match_text, category").eq("user_id", userId);
+  const catRules = (catRulesRaw ?? []) as { match_text: string; category: string }[];
   // manuales para dedup
   const { data: manualsRaw } = await supabase
     .from("movements").select("id, amount, type, date")
@@ -33,6 +37,8 @@ async function enrichRows(supabase: any, rows: any[], txs: any[], userId: string
     r.duplicate_of = dup;
     const mcc = txs[i]?.merchant_category_code ?? null;
     r.excluded = dup !== null || isCashWithdrawal(mcc, r.description) || matchesExclusionRule(r.description, rules);
+    const ruleCat = categoryFromRules(r.description, catRules);
+    if (ruleCat) r.category = ruleCat;
   });
   // LLM solo para las NO excluidas sin categoría, por tipo
   for (const type of ["expense", "income"] as const) {
