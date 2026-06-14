@@ -13,6 +13,7 @@ import {
   NetWorthAreaChart,
 } from "@/components/charts/charts";
 import { InsightsCard } from "@/components/assistant/InsightsCard";
+import { FireCard } from "@/components/app/FireCard";
 import { BudgetSummaryCard } from "@/components/planning/BudgetSummaryCard";
 import { useMoney } from "@/components/app/CurrencyProvider";
 import { formatMonth } from "@/lib/dashboard-data";
@@ -146,8 +147,9 @@ function HomeBody() {
 
       <InsightsCard />
 
-      <section>
+      <section className="grid gap-5 lg:grid-cols-2">
         <BudgetSummaryCard />
+        <FireCard />
       </section>
 
       <section className="grid gap-5 lg:grid-cols-[1.55fr_1fr]">
