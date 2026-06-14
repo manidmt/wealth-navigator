@@ -269,3 +269,91 @@ export function useDeleteExclusionRule() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["exclusion_rules"] }),
   });
 }
+
+export type CategoryRuleRecord = {
+  id: string;
+  user_id: string;
+  match_text: string;
+  category: string;
+  created_at: string;
+};
+
+export function useCategoryRules() {
+  const { user } = useAuth();
+  return useQuery<CategoryRuleRecord[]>({
+    queryKey: ["category_rules", user?.id],
+    queryFn: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from("movement_category_rules")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!user,
+  });
+}
+
+export function useCreateCategoryRule() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { match_text: string; category: string }) => {
+      if (!user) throw new Error("No autenticado");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
+        .from("movement_category_rules")
+        .upsert(
+          { user_id: user.id, match_text: input.match_text.trim(), category: input.category },
+          { onConflict: "user_id,match_text" },
+        );
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["category_rules"] }),
+  });
+}
+
+export function useDeleteCategoryRule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
+        .from("movement_category_rules")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["category_rules"] }),
+  });
+}
+
+/** Movimientos (expense, no excluido) con descripción de los últimos `months` meses. */
+export function useRecentMovements(months: number) {
+  const { user } = useAuth();
+  return useQuery<{ date: string; description: string; amount: number; category: string }[]>({
+    queryKey: ["recent_movements", months, user?.id],
+    queryFn: async () => {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth() - months + 1, 1);
+      const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from("movements")
+        .select("date, description, amount, category")
+        .eq("type", "expense")
+        .eq("excluded", false)
+        .gte("date", fmt(start));
+      if (error) throw error;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (data ?? []).map((r: any) => ({
+        date: r.date as string,
+        description: (r.description as string) ?? "",
+        amount: Number(r.amount) || 0,
+        category: (r.category as string) ?? "Otro",
+      }));
+    },
+    enabled: !!user,
+  });
+}
