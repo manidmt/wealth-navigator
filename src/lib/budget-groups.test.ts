@@ -12,7 +12,9 @@ describe("budget-groups", () => {
     expect(groupForCategory("Suscripciones")).toBe("hogar");
     expect(groupForCategory("Gimnasio")).toBe("salud");
     expect(groupForCategory("Tecnología")).toBe("compras");
-    expect(groupForCategory("Educación")).toBe("otros");
+    expect(groupForCategory("Educación")).toBe("formacion");
+    expect(groupForCategory("Formación")).toBe("formacion");
+    expect(groupForCategory("Otro")).toBe("otros");
   });
 
   it("categoría desconocida cae en otros", () => {

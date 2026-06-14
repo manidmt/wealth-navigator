@@ -11,7 +11,8 @@ export const BUDGET_GROUPS: BudgetGroup[] = [
     categories: ["Salud", "Gimnasio", "Deporte", "Cuidado personal", "Higiene", "Suplementos"],
   },
   { key: "compras", label: "Compras", categories: ["Ropa", "Tecnología", "Regalo"] },
-  { key: "otros", label: "Otros", categories: ["Otro", "Educación", "Formación"] },
+  { key: "formacion", label: "Formación", categories: ["Educación", "Formación"] },
+  { key: "otros", label: "Otros", categories: ["Otro"] },
 ];
 
 const CATEGORY_TO_GROUP: Record<string, string> = Object.fromEntries(
