@@ -10,6 +10,7 @@ import { MonthDetailDrawer } from "@/components/app/MonthDetailDrawer";
 import { AddMovementSheet } from "@/components/app/AddMovementSheet";
 import { CsvImportSheet } from "@/components/app/CsvImportSheet";
 import { ExpenseTagsBreakdown } from "@/components/app/ExpenseTagsBreakdown";
+import { BudgetSummaryCard } from "@/components/planning/BudgetSummaryCard";
 import { useMoney } from "@/components/app/CurrencyProvider";
 import { EXPENSE_TAGS, tagSeries } from "@/lib/expense-tags";
 import { formatMonth, type ExpenseMonth } from "@/lib/dashboard-data";
@@ -146,6 +147,10 @@ function ExpensesBody() {
           }
           hint="Sobre ingresos totales del mes"
         />
+      </section>
+
+      <section>
+        <BudgetSummaryCard />
       </section>
 
       <section className="grid gap-5 lg:grid-cols-[1.7fr_1fr]">
