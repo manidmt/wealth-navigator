@@ -19,6 +19,9 @@ import {
   type BudgetMap,
 } from "@/lib/budget-calc";
 import { medianByGroup } from "@/lib/budget-history";
+import { BUDGET_GROUPS } from "@/lib/budget-groups";
+import { useRecentMovements } from "@/lib/movements-api";
+import { detectRecurring, recurringFloorByGroup } from "@/lib/recurring";
 import { euro, formatMonth } from "@/lib/dashboard-data";
 import { BudgetTable } from "./BudgetTable";
 import { AgentSuggestionPanel } from "./AgentSuggestionPanel";
@@ -62,6 +65,8 @@ export function ExpensePlanning() {
     expense: m.expenseTotal,
   }));
   const { data: history = [] } = useHistoricalCategorySpend(6);
+  const { data: recentMovs = [] } = useRecentMovements(6);
+  const recurringFloor = recurringFloorByGroup(detectRecurring(recentMovs));
 
   // Se siembra el estado local una sola vez por mes. No volvemos a hacerlo en cada
   // refetch (cada guardado invalida la query): si lo hiciéramos, una respuesta lenta
@@ -139,7 +144,12 @@ export function ExpensePlanning() {
     save({ budgets: next });
   }
   function autofillFromHistory() {
-    applyBudgets(medianByGroup(history));
+    const med = medianByGroup(history);
+    const next: BudgetMap = {};
+    for (const g of BUDGET_GROUPS) {
+      next[g.key] = Math.max(med[g.key] ?? 0, recurringFloor[g.key] ?? 0);
+    }
+    applyBudgets(next);
   }
   function updateAllocations(next: BudgetMap) {
     setAllocations(next);

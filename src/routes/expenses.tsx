@@ -10,6 +10,7 @@ import { MonthDetailDrawer } from "@/components/app/MonthDetailDrawer";
 import { AddMovementSheet } from "@/components/app/AddMovementSheet";
 import { CsvImportSheet } from "@/components/app/CsvImportSheet";
 import { ExpenseTagsBreakdown } from "@/components/app/ExpenseTagsBreakdown";
+import { RecurringExpensesCard } from "@/components/app/RecurringExpensesCard";
 import { BudgetSummaryCard } from "@/components/planning/BudgetSummaryCard";
 import { useMoney } from "@/components/app/CurrencyProvider";
 import { EXPENSE_TAGS, tagSeries } from "@/lib/expense-tags";
@@ -151,6 +152,10 @@ function ExpensesBody() {
 
       <section>
         <BudgetSummaryCard />
+      </section>
+
+      <section>
+        <RecurringExpensesCard />
       </section>
 
       <section className="grid gap-5 lg:grid-cols-[1.7fr_1fr]">
