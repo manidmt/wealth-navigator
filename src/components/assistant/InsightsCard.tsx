@@ -4,6 +4,11 @@ import { useNavigate } from "@tanstack/react-router";
 import { AssistantMark } from "./AssistantMark";
 import { computeInsights, type Insight } from "@/lib/assistant-mock";
 import { useDashboard } from "@/hooks/use-dashboard";
+import { budgetInsight, recurringInsight } from "@/lib/extra-insights";
+import { useBudget, useMonthCategorySpend } from "@/lib/budget-api";
+import { useRecentMovements } from "@/lib/movements-api";
+import { groupActuals } from "@/lib/budget-calc";
+import { detectRecurring } from "@/lib/recurring";
 
 const TONE_DOT: Record<Insight["tone"], string> = {
   positive: "bg-positive",
@@ -16,6 +21,21 @@ export function InsightsCard() {
   const insights = computeInsights(data);
   const assistant = useAssistant();
   const navigate = useNavigate();
+
+  const month = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  })();
+  const { data: budget } = useBudget(month);
+  const { data: spend = [] } = useMonthCategorySpend(month);
+  const { data: recentMovs = [] } = useRecentMovements(6);
+
+  const extra = [
+    budget ? budgetInsight(budget.budgets ?? {}, groupActuals(spend), new Date()) : null,
+    recurringInsight(detectRecurring(recentMovs)),
+  ].filter((x): x is NonNullable<typeof x> => x !== null);
+
+  const allInsights = [...insights, ...extra].slice(0, 4);
 
   return (
     <section className="rounded-xl border border-border bg-card">
@@ -44,7 +64,7 @@ export function InsightsCard() {
       </header>
 
       <ul className="divide-y divide-border">
-        {insights.map((it) => (
+        {allInsights.map((it) => (
           <li
             key={it.id}
             className="group flex items-start gap-3 px-5 py-3.5 hover:bg-muted/30"
