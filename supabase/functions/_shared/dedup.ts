@@ -7,7 +7,7 @@ export function findDuplicate(
   manuals: DedupRow[],
   opts: { amountAbs?: number; amountPct?: number; toleranceDays?: number } = {},
 ): string | null {
-  const { amountAbs = 1.5, amountPct = 0.05, toleranceDays = 3 } = opts;
+  const { amountAbs = 1.5, amountPct = 0.05, toleranceDays = 2 } = opts;
   const qt = new Date(q.date).getTime();
   for (const m of manuals) {
     if (m.type !== q.type) continue;

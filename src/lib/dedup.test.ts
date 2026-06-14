@@ -9,10 +9,16 @@ const manuals: DedupRow[] = [
 describe("findDuplicate", () => {
   it("mismo importe+tipo, fecha exacta → match", () =>
     expect(findDuplicate({ amount: 15, type: "expense", date: "2026-06-10" }, manuals)).toBe("m1"));
-  it("dentro de ±3 días → match", () =>
+  it("dentro de ±2 días → match", () =>
     expect(findDuplicate({ amount: 15, type: "expense", date: "2026-06-12" }, manuals)).toBe("m1"));
-  it("fuera de ±3 días → null", () =>
+  it("fuera de ±2 días → null", () =>
     expect(findDuplicate({ amount: 15, type: "expense", date: "2026-06-20" }, manuals)).toBeNull());
+  it("Δ3 días → null por defecto (ventana ±2)", () =>
+    expect(
+      findDuplicate({ amount: 15, type: "expense", date: "2026-06-13" }, [
+        { id: "d3", amount: 15, type: "expense", date: "2026-06-10" },
+      ]),
+    ).toBeNull());
   it("importe distinto → null", () =>
     expect(findDuplicate({ amount: 30, type: "expense", date: "2026-06-10" }, manuals)).toBeNull());
   it("tipo distinto → null", () =>

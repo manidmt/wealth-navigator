@@ -25,8 +25,11 @@ async function enrichRows(supabase: any, rows: any[], txs: any[], userId: string
   const manuals: DedupRow[] = (manualsRaw ?? []).map((m: any) => ({
     id: m.id, amount: Number(m.amount), type: m.type, date: m.date,
   }));
+  const claimed = new Set<string>();
   rows.forEach((r, i) => {
-    const dup = findDuplicate({ amount: r.amount, type: r.type, date: r.date }, manuals);
+    const available = manuals.filter((m) => !claimed.has(m.id));
+    const dup = findDuplicate({ amount: r.amount, type: r.type, date: r.date }, available);
+    if (dup) claimed.add(dup);
     r.duplicate_of = dup;
     const mcc = txs[i]?.merchant_category_code ?? null;
     r.excluded = dup !== null || isCashWithdrawal(mcc, r.description) || matchesExclusionRule(r.description, rules);
