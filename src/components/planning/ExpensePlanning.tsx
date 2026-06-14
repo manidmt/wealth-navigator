@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Input } from "@/components/ui/input";
@@ -45,7 +45,18 @@ export function ExpensePlanning() {
   const [savingsGoal, setSavingsGoal] = useState<number>(0);
   const [budgets, setBudgets] = useState<BudgetMap>({});
 
+  // Se siembra el estado local una sola vez por mes. No volvemos a hacerlo en cada
+  // refetch (cada guardado invalida la query): si lo hiciéramos, una respuesta lenta
+  // podría revertir lo que el usuario acaba de teclear.
+  const seededMonthRef = useRef<string | null>(null);
   useEffect(() => {
+    seededMonthRef.current = null;
+  }, [month]);
+  useEffect(() => {
+    if (budget === undefined) return; // cargando
+    if (seededMonthRef.current === month) return; // ya sembrado este mes
+    if (budget && budget.month !== month) return; // datos obsoletos del mes anterior
+    seededMonthRef.current = month;
     if (budget) {
       setIncomes(budget.incomes?.length ? budget.incomes : DEFAULT_INCOMES);
       setSavingsGoal(Number(budget.savings_goal) || 0);
