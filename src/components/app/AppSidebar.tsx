@@ -4,7 +4,6 @@ import {
   Receipt,
   PieChart,
   TrendingUp,
-  Wallet,
   Settings,
   MessageSquareText,
   LogOut,
@@ -28,7 +27,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 type NavItem = {
   title: string;
-  url: "/" | "/expenses" | "/portfolio" | "/net-worth" | "/balances" | "/settings" | "/assistant" | "/planning" | "/bank-callback";
+  url: "/" | "/expenses" | "/portfolio" | "/net-worth" | "/settings" | "/assistant" | "/planning" | "/bank-callback";
   icon: typeof LayoutDashboard;
   exact?: boolean;
 };
@@ -39,7 +38,6 @@ const items: NavItem[] = [
   { title: "Portfolio", url: "/portfolio", icon: PieChart },
   { title: "Planificación", url: "/planning", icon: CalendarRange },
   { title: "Patrimonio", url: "/net-worth", icon: TrendingUp },
-  { title: "Saldos y cierres", url: "/balances", icon: Wallet },
   { title: "Asistente", url: "/assistant", icon: MessageSquareText },
   { title: "Configuración", url: "/settings", icon: Settings },
 ];

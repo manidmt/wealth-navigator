@@ -16,7 +16,6 @@ import { Route as NetWorthRouteImport } from './routes/net-worth'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ExpensesRouteImport } from './routes/expenses'
 import { Route as BankCallbackRouteImport } from './routes/bank-callback'
-import { Route as BalancesRouteImport } from './routes/balances'
 import { Route as AssistantRouteImport } from './routes/assistant'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -55,11 +54,6 @@ const BankCallbackRoute = BankCallbackRouteImport.update({
   path: '/bank-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BalancesRoute = BalancesRouteImport.update({
-  id: '/balances',
-  path: '/balances',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AssistantRoute = AssistantRouteImport.update({
   id: '/assistant',
   path: '/assistant',
@@ -74,7 +68,6 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/assistant': typeof AssistantRoute
-  '/balances': typeof BalancesRoute
   '/bank-callback': typeof BankCallbackRoute
   '/expenses': typeof ExpensesRoute
   '/login': typeof LoginRoute
@@ -86,7 +79,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/assistant': typeof AssistantRoute
-  '/balances': typeof BalancesRoute
   '/bank-callback': typeof BankCallbackRoute
   '/expenses': typeof ExpensesRoute
   '/login': typeof LoginRoute
@@ -99,7 +91,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/assistant': typeof AssistantRoute
-  '/balances': typeof BalancesRoute
   '/bank-callback': typeof BankCallbackRoute
   '/expenses': typeof ExpensesRoute
   '/login': typeof LoginRoute
@@ -113,7 +104,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/assistant'
-    | '/balances'
     | '/bank-callback'
     | '/expenses'
     | '/login'
@@ -125,7 +115,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/assistant'
-    | '/balances'
     | '/bank-callback'
     | '/expenses'
     | '/login'
@@ -137,7 +126,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/assistant'
-    | '/balances'
     | '/bank-callback'
     | '/expenses'
     | '/login'
@@ -150,7 +138,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AssistantRoute: typeof AssistantRoute
-  BalancesRoute: typeof BalancesRoute
   BankCallbackRoute: typeof BankCallbackRoute
   ExpensesRoute: typeof ExpensesRoute
   LoginRoute: typeof LoginRoute
@@ -211,13 +198,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BankCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/balances': {
-      id: '/balances'
-      path: '/balances'
-      fullPath: '/balances'
-      preLoaderRoute: typeof BalancesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/assistant': {
       id: '/assistant'
       path: '/assistant'
@@ -238,7 +218,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AssistantRoute: AssistantRoute,
-  BalancesRoute: BalancesRoute,
   BankCallbackRoute: BankCallbackRoute,
   ExpensesRoute: ExpensesRoute,
   LoginRoute: LoginRoute,

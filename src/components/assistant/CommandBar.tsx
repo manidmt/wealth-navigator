@@ -9,12 +9,11 @@ import {
 import { AssistantMark } from "./AssistantMark";
 import { SUGGESTIONS } from "@/lib/assistant-mock";
 
-const NAV_SHORTCUTS: { label: string; to: "/" | "/expenses" | "/portfolio" | "/net-worth" | "/balances" | "/settings" }[] = [
+const NAV_SHORTCUTS: { label: string; to: "/" | "/expenses" | "/portfolio" | "/net-worth" | "/settings" }[] = [
   { label: "Ir a Resumen", to: "/" },
   { label: "Ir a Gastos mensuales", to: "/expenses" },
   { label: "Ir a Portfolio", to: "/portfolio" },
   { label: "Ir a Patrimonio", to: "/net-worth" },
-  { label: "Ir a Saldos y cierres", to: "/balances" },
 ];
 
 export function CommandBar({
@@ -36,7 +35,7 @@ export function CommandBar({
     navigate({ to: "/assistant", search: { q: prompt } });
   }
 
-  function go(to: "/" | "/expenses" | "/portfolio" | "/net-worth" | "/balances" | "/settings") {
+  function go(to: "/" | "/expenses" | "/portfolio" | "/net-worth" | "/settings") {
     onOpenChange(false);
     navigate({ to });
   }
