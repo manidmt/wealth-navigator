@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowRight, Search } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { AssistantMark } from "./AssistantMark";
 import { SUGGESTIONS } from "@/lib/assistant-mock";
 
-const NAV_SHORTCUTS: { label: string; to: "/" | "/expenses" | "/portfolio" | "/net-worth" | "/settings" }[] = [
+const NAV_SHORTCUTS: {
+  label: string;
+  to: "/" | "/expenses" | "/portfolio" | "/net-worth" | "/settings";
+}[] = [
   { label: "Ir a Resumen", to: "/" },
   { label: "Ir a Gastos mensuales", to: "/expenses" },
   { label: "Ir a Portfolio", to: "/portfolio" },
@@ -42,7 +41,9 @@ export function CommandBar({
 
   const q = query.trim().toLowerCase();
   const filteredSugs = q
-    ? SUGGESTIONS.filter((s) => s.label.toLowerCase().includes(q) || s.prompt.toLowerCase().includes(q))
+    ? SUGGESTIONS.filter(
+        (s) => s.label.toLowerCase().includes(q) || s.prompt.toLowerCase().includes(q),
+      )
     : SUGGESTIONS;
   const filteredNav = q
     ? NAV_SHORTCUTS.filter((n) => n.label.toLowerCase().includes(q))
@@ -103,9 +104,7 @@ export function CommandBar({
                   <AssistantMark className="mt-0.5 h-4 w-4 text-primary/80" />
                   <div className="min-w-0 flex-1">
                     <div className="text-[13.5px] font-medium">{s.label}</div>
-                    <div className="truncate text-[11.5px] text-muted-foreground">
-                      {s.prompt}
-                    </div>
+                    <div className="truncate text-[11.5px] text-muted-foreground">{s.prompt}</div>
                   </div>
                   <span className="self-center text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground/70">
                     {s.scope}
@@ -144,7 +143,8 @@ export function CommandBar({
         <div className="flex items-center justify-between border-t border-border bg-muted/30 px-4 py-2 text-[10.5px] text-muted-foreground">
           <span>Asistente · respuestas simuladas</span>
           <span className="hidden sm:inline">
-            <kbd className="rounded border border-border px-1.5 py-0.5 font-mono">⌘K</kbd> para abrir
+            <kbd className="rounded border border-border px-1.5 py-0.5 font-mono">⌘K</kbd> para
+            abrir
           </span>
         </div>
       </DialogContent>

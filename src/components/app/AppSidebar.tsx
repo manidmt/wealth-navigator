@@ -27,7 +27,15 @@ import { useAuth } from "@/hooks/use-auth";
 
 type NavItem = {
   title: string;
-  url: "/" | "/expenses" | "/portfolio" | "/net-worth" | "/settings" | "/assistant" | "/planning" | "/bank-callback";
+  url:
+    | "/"
+    | "/expenses"
+    | "/portfolio"
+    | "/net-worth"
+    | "/settings"
+    | "/assistant"
+    | "/planning"
+    | "/bank-callback";
   icon: typeof LayoutDashboard;
   exact?: boolean;
 };
@@ -55,9 +63,7 @@ export function AppSidebar() {
             <BrandMark className="h-4 w-4" />
           </div>
           <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
-            <span className="font-display text-sm font-semibold tracking-tight">
-              Wealth OS
-            </span>
+            <span className="font-display text-sm font-semibold tracking-tight">Wealth OS</span>
             <span className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
               {data.owner}
             </span>
@@ -101,9 +107,7 @@ export function AppSidebar() {
         {user ? (
           <div className="flex items-center justify-between gap-2 rounded-md bg-accent/60 px-3 py-2">
             <div className="min-w-0">
-              <div className="truncate text-[12px] font-medium text-foreground">
-                {user.email}
-              </div>
+              <div className="truncate text-[12px] font-medium text-foreground">{user.email}</div>
               <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                 Sesión activa
               </div>
